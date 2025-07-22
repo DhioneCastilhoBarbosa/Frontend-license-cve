@@ -1,35 +1,63 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useState } from 'react'
+import Header from './components/header'
+import SignIn from './components/singin'
+import './global.css'
+import Dashboard from './components/dashboard/dashboard'
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false)
+
+  
+
+  useEffect(() => {
+  const authenticated = localStorage.getItem('authenticated')
+  const expires = localStorage.getItem('expires_at')
+
+  const now = Date.now()
+  const expiration = expires ? parseInt(expires, 10) : 0
+
+  if (authenticated === 'true' && expiration > now) {
+    setIsAuthenticated(true)
+  } else {
+    localStorage.removeItem('authenticated')
+    localStorage.removeItem('expires_at')
+    setIsAuthenticated(false)
+  }
+}, [])
+
+  const handleLogin = () =>{
+    const expiresAt = Date.now() +60 * 60 * 1000 // 60 minutos
+    localStorage.setItem('authenticated', 'true')
+    localStorage.setItem('expires_at', expiresAt.toString())
+    setIsAuthenticated(true)
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('authenticated')
+    localStorage.removeItem('expires_at')
+    setIsAuthenticated(false)
+  }
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
-}
+  <div className="h-screen flex flex-col bg-white text-black dark:bg-zinc-900 dark:text-white overflow-hidden">
+    {!isAuthenticated ? (
+      <main className="flex-1 flex items-center justify-center">
+        <SignIn onLogin={handleLogin} />
+      </main>
+    ) : (
+      <>
+        {/* Header fixo no topo */}
+        <header className="w-full">
+          <Header LogOut={handleLogout} />
+        </header>
 
-export default App
+        {/* Conteúdo ocupa o restante da tela com rolagem interna controlada */}
+        <main className="flex-1 h-screen overflow-auto">
+          <Dashboard />
+        </main>
+      </>
+    )}
+  </div>
+)
+
+}
