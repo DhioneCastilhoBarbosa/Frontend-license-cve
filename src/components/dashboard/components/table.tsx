@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import CreateLicenseModal from './createLicenseModal'
 
 const data = [
   {
@@ -108,9 +109,43 @@ export default function Table() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Todos')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
-  
+  const itemsPerPage = 2
+
+type License = {
+  id: number
+  nome: string
+  email: string
+  codigoCompra: string
+  licenca: string
+  status: string
+  validade: string
+  dataCompra: string
+}
+
+const handleCreateLicense = (data: {
+  codigoCompra: string
+  email: string
+  nome: string
+  quantidade: number
+  validade: string
+}) => {
+  // Exemplo de mapeamento para License, se necessário
+  const newLicense: License = {
+    id: Date.now(), // ou outra lógica para gerar ID
+    nome: data.nome,
+    email: data.email,
+    codigoCompra: data.codigoCompra,
+    licenca: '', // definir conforme necessário
+    status: 'Criada', // ou outro valor padrão
+    validade: data.validade,
+    dataCompra: new Date().toLocaleDateString('pt-BR'), // ou outro valor
+  }
+  console.log('Nova licença:', newLicense)
+  // aqui você pode enviar via API, ou adicionar ao seu array `data`
+}
+
   const filtered = data.filter((item) => {
     const searchMatch =
       item.nome.toLowerCase().includes(search.toLowerCase()) ||
@@ -123,8 +158,8 @@ export default function Table() {
   })
 
   const totalPages = Math.ceil(filtered.length / itemsPerPage)
-const startIndex = (currentPage - 1) * itemsPerPage
-const paginatedData = filtered.slice(startIndex, startIndex + itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedData = filtered.slice(startIndex, startIndex + itemsPerPage)
 
 const goToPage = (page: number) => {
   if (page >= 1 && page <= totalPages) {
@@ -133,7 +168,7 @@ const goToPage = (page: number) => {
 }
 
   return (
-    <div className="space-y-4">
+  <div className="space-y-4">
   {/* Bloco de filtros integrado visualmente com a tabela */}
   <div className="rounded-xl shadow-lg ring-1 ring-slate-200 dark:ring-zinc-700 bg-white dark:bg-zinc-900 px-4 py-2 mt-1">
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -155,13 +190,19 @@ const goToPage = (page: number) => {
         <option value="Expirada">Expirada</option>
         <option value="Criada">Criada</option>
       </select>
-      <button>
+      <button onClick={() => setIsModalOpen(true)}>
         <span className="px-4 py-2 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition cursor-pointer">
           Criar licença
         </span>
       </button>
     </div>
   </div>
+  
+  <CreateLicenseModal
+  isOpen={isModalOpen}
+  onClose={() => setIsModalOpen(false)}
+  onSubmit={handleCreateLicense}
+/>
 
   {/* Tabela */}
   <div className="overflow-x-auto rounded-xl shadow-lg ring-1 ring-slate-200 dark:ring-zinc-700">
@@ -246,7 +287,7 @@ const goToPage = (page: number) => {
               onClick={() => goToPage(pageNumber)}
               className={`w-8 h-8 flex items-center justify-center rounded-md border dark:border-zinc-700 ${
                 currentPage === pageNumber
-                  ? 'bg-green-200 text-green-900 font-semibold'
+                  ? 'bg-sky-100 text-black font-semibold'
                   : 'hover:bg-gray-200 dark:hover:bg-zinc-800 text-gray-700 dark:text-gray-300 cursor-pointer'
               }`}
             >
