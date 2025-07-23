@@ -102,6 +102,16 @@ const data = [
     validade: '12/10/2025',
     dataCompra: '12/05/2024',
   },
+  {
+    id: 11,
+    nome: 'José Pereira',
+    email: 'jose@email.com',
+    codigoCompra: 'CMP-33227',
+    licenca: 'LIC-321ASD',
+    status: 'Criada',
+    validade: '12/10/2025',
+    dataCompra: '12/05/2024',
+  },
 ]
 
 
@@ -111,7 +121,7 @@ export default function Table() {
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
 
-  const itemsPerPage = 2
+  const itemsPerPage = 10
 
 type License = {
   id: number

@@ -9,8 +9,8 @@ export default function Header({ LogOut }: HeaderProps) {
   const [isDark, setIsDark] = useState(false)
 
   const handleSubmit = () => {
-    // Aqui você faria a autenticação real
-    LogOut()// Simula login com sucesso
+    
+    LogOut()
   }
 
   useLayoutEffect(() => {

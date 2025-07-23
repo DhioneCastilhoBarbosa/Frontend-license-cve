@@ -1,4 +1,5 @@
 import { KeySquareIcon, Lock, Mail } from "lucide-react"
+import { useNavigate } from "react-router-dom";
 
 
 interface SignInProps {
@@ -7,18 +8,26 @@ interface SignInProps {
 
 export default function SignIn({onLogin}: SignInProps){
 
+  const navigate = useNavigate()
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     // Aqui você faria a autenticação real
     onLogin()
+    navigate("/dashboard") // redireciona após login
   }
+
+  const handleRegister = () => {
+    navigate("/cadastro") // redireciona para a página de cadastro
+  }
+
   return (
+    <div className="flex items-center justify-center h-screen bg-white text-black dark:bg-zinc-900 dark:text-white">
     <div className=" flex flex-col  justify-center items-center transition-colors duration-300 bg-white text-black dark:bg-zinc-800 dark:text-white border-2 min-w-96 w-96 p-8  border-sky-300 rounded-2xl shadow-lg ring-1 ring-slate-200 dark:ring-zinc-700" >
       <KeySquareIcon size={64} className="mb-4" />
       <h1 className="text-4xl font-bold">License</h1>
       <h2 className="mt-8 text-2xl">Bem vindo!</h2>
-      <label className="font-light mt-2">Para se cadastrar acesse <a href="#">aqui</a> </label>
-      <form 
+      <label className="font-light mt-2">Não tem uma conta? <a href="#"  className="text-sky-500 underline hover:text-sky-600 transition-colors" onClick={handleRegister}>Cadastre-se aqui.</a> </label>
+      <form
         onSubmit={handleSubmit}
         className="flex flex-col justify-center items-center gap-4 mt-8 w-full max-w-md"
       >
@@ -54,6 +63,7 @@ export default function SignIn({onLogin}: SignInProps){
       </form>
 
 
+    </div>
     </div>
   )
 }
