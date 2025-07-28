@@ -12,11 +12,11 @@ import './global.css'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     const authenticated = localStorage.getItem('authenticated')
     const expires = localStorage.getItem('expires_at')
-
     const now = Date.now()
     const expiration = expires ? parseInt(expires, 10) : 0
 
@@ -25,8 +25,11 @@ export default function App() {
     } else {
       localStorage.removeItem('authenticated')
       localStorage.removeItem('expires_at')
-      setIsAuthenticated(false)
+      localStorage.removeItem('token') // importante também
     }
+
+    // ✅ Finaliza o carregamento depois da verificação
+    setIsLoading(false)
   }, [])
 
   const handleLogin = () => {
@@ -39,42 +42,48 @@ export default function App() {
   const handleLogout = () => {
     localStorage.removeItem('authenticated')
     localStorage.removeItem('expires_at')
+    localStorage.removeItem('token')
     setIsAuthenticated(false)
+  }
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center text-black dark:text-white">
+        Carregando...
+      </div>
+    )
   }
 
   return (
     <>
-    <Router>
-      <div className="h-screen flex flex-col bg-white text-black dark:bg-zinc-900 dark:text-white overflow-hidden">
-        <Routes>
-          <Route path="/" element={<Navigate to="/login" />} />
+      <Router>
+        <div className="h-screen flex flex-col bg-white text-black dark:bg-zinc-900 dark:text-white overflow-hidden">
+          <Routes>
+            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/login" element={<SignIn onLogin={handleLogin} />} />
+            <Route path="/cadastro" element={<SignUp />} />
 
-          <Route path="/login" element={<SignIn onLogin={handleLogin} />} />
+            <Route
+              path="/dashboard"
+              element={
+                <PrivateRoute isAuthenticated={isAuthenticated}>
+                  <>
+                    <header className="w-full">
+                      <Header LogOut={handleLogout} />
+                    </header>
+                    <main className="flex-1 h-screen overflow-auto">
+                      <Dashboard />
+                    </main>
+                  </>
+                </PrivateRoute>
+              }
+            />
 
-          <Route path="/cadastro" element={<SignUp/>} />
-
-          <Route
-            path="/dashboard"
-            element={
-              <PrivateRoute isAuthenticated={isAuthenticated}>
-                <>
-                  <header className="w-full">
-                    <Header LogOut={handleLogout} />
-                  </header>
-                  <main className="flex-1 h-screen overflow-auto">
-                    <Dashboard />
-                  </main>
-                </>
-              </PrivateRoute>
-            }
-          />
-
-          {/* Rota de fallback */}
-          <Route path="*" element={<Navigate to="/login" />} />
-        </Routes>
-      </div>
-    </Router>
-     <Toaster richColors position="top-right" />
-  </>
+            <Route path="*" element={<Navigate to="/login" />} />
+          </Routes>
+        </div>
+      </Router>
+      <Toaster richColors position="top-right" />
+    </>
   )
 }

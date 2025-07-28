@@ -2,6 +2,7 @@ import { KeySquareIcon, Loader, Lock, Mail } from "lucide-react"
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { useState } from "react";
+import { toast } from "sonner";
 
 
 interface SignInProps {
@@ -17,9 +18,8 @@ export default function SignIn({onLogin}: SignInProps){
   
 const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
-   setLoading(true)
+  setLoading(true);
   try {
-    
     const resposta = await api.post('/login', {
       email: email,
       senha: password,
@@ -27,16 +27,24 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
 
     const { token } = resposta.data;
     console.log('Token recebido:', token);
+
     localStorage.setItem('token', token);
+
+    // ⬇️ Adicione essas duas linhas para o App reconhecer o login
+    localStorage.setItem('authenticated', 'true');
+    const expiresAt = Date.now() + 60 * 60 * 1000; // 60 minutos
+    localStorage.setItem('expires_at', expiresAt.toString());
+
     onLogin();
     navigate('/dashboard');
-  } catch (erro: unknown) { 
-    console.error('Erro ao fazer login', erro); 
-  }
-  finally{
-     setLoading(false)
+  } catch (erro: unknown) {
+    console.error('Erro ao fazer login', erro);
+    toast.error('Erro ao fazer login. Verifique suas credenciais e tente novamente.');
+  } finally {
+    setLoading(false);
   }
 }
+
 
 
   const handleRegister = () => {
