@@ -1,29 +1,53 @@
 import { Dialog } from '@headlessui/react'
 import { useState } from 'react'
+import api from '../../../services/api'
+import { toast } from 'sonner'
+import { Loader } from 'lucide-react'
 
 interface CreateLicenseModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (data: {
-    codigoCompra: string
-    email: string
-    nome: string
-    quantidade: number
-    validade: string
-  }) => void
+  onRefresh: () => void
 }
 
-export default function CreateLicenseModal({ isOpen, onClose, onSubmit }: CreateLicenseModalProps) {
-  const [codigoCompra, setCodigoCompra] = useState('')
+export default function CreateLicenseModal({ isOpen, onClose, onRefresh }: CreateLicenseModalProps) {
+  const [codigo_compra, setCodigoCompra] = useState('')
   const [email, setEmail] = useState('')
   const [nome, setNome] = useState('')
   const [quantidade, setQuantidade] = useState(1)
   const [validade, setValidade] = useState('')
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = () => {
-    onSubmit({ codigoCompra, email, nome, quantidade, validade })
-    onClose()
+  
+
+  const handleCreateLicense = async(data: {
+    codigo_compra: string
+    email: string
+    nome: string
+    quantidade: number
+    validade: number
+  }) => {
+    if (!data.codigo_compra || !data.email || !data.nome || !data.quantidade || !data.validade) {
+      toast.error('Por favor, preencha todos os campos.')
+      return
+    }
+    try {
+      setLoading(true)
+      await api.post('/criar-licenca', data)
+      console.log('Nova licença:', data)
+      toast.success('Licença criada com sucesso!')
+      onRefresh() // Chama a função para atualizar os dados na tabela
+    } catch (error) {
+      toast.error('Erro ao criar licença. Tente novamente.')
+      console.error('Erro ao criar licença:', error)
+    }finally {
+      setLoading(false)
+      onClose()
+    }
+   
   }
+
+
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
@@ -36,42 +60,78 @@ export default function CreateLicenseModal({ isOpen, onClose, onSubmit }: Create
           </Dialog.Title>
 
           <div className="space-y-3">
-            <input
-              type="text"
-              placeholder="Código de Compra"
-              value={codigoCompra}
-              onChange={(e) => setCodigoCompra(e.target.value)}
-              className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
-            />
+            <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
+              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="codigoCompra w-full">
+                Código de Compra
+              </label>
+              <input
+                 className="min-w-68 px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                type="text"
+                id="codigoCompra"
+                placeholder="Código de Compra"
+                value={codigo_compra}
+                onChange={(e) => setCodigoCompra(e.target.value)}
+                required
+              />
+            </div>
+            <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
+              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="email">
+                Email
+              </label>
             <input
               type="email"
               placeholder="Email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
+              required
+              className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
             />
+            </div>
+            <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
+              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="nome">
+                Nome
+              </label>
             <input
               type="text"
               placeholder="Nome"
               value={nome}
               onChange={(e) => setNome(e.target.value)}
-              className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
+              required
+              className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
             />
+            </div>
+          </div>
+          <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
+            <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="quantidade">
+              Quantidade
+            </label>  
             <input
               type="number"
               placeholder="Quantidade"
               min={1}
               value={quantidade}
               onChange={(e) => setQuantidade(Number(e.target.value))}
-              className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
+              required
+              className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
             />
-            <input
-              type="date"
-              placeholder="Validade"
+          </div>
+          <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
+            <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="validade">
+              Validade
+            </label>
+            <select
               value={validade}
               onChange={(e) => setValidade(e.target.value)}
-              className="w-full px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
-            />
+              required
+              className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
+            >
+            <option value="">Selecione a validade</option>
+            <option value="12">12 meses</option>
+            <option value="24">24 meses</option>
+            <option value="36">36 meses</option>
+            <option value="48">48 meses</option>
+            <option value="60">60 meses</option>
+          </select>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
@@ -81,11 +141,18 @@ export default function CreateLicenseModal({ isOpen, onClose, onSubmit }: Create
             >
               Cancelar
             </button>
+
             <button
-              onClick={handleSubmit}
+              onClick={() => handleCreateLicense({
+                codigo_compra,
+                email,
+                nome,
+                quantidade: Number(quantidade),
+                validade: Number(validade)
+              })}
               className="px-4 py-2 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition"
             >
-              Criar
+                {loading ? <Loader className="animate-spin w-5 h-5" /> : 'Criar'}
             </button>
           </div>
         </div>

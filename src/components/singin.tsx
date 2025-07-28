@@ -1,5 +1,7 @@
-import { KeySquareIcon, Lock, Mail } from "lucide-react"
+import { KeySquareIcon, Loader, Lock, Mail } from "lucide-react"
 import { useNavigate } from "react-router-dom";
+import api from "../services/api";
+import { useState } from "react";
 
 
 interface SignInProps {
@@ -8,16 +10,37 @@ interface SignInProps {
 
 export default function SignIn({onLogin}: SignInProps){
 
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    // Aqui você faria a autenticação real
-    onLogin()
-    navigate("/dashboard") // redireciona após login
+  
+const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+   setLoading(true)
+  try {
+    
+    const resposta = await api.post('/login', {
+      email: email,
+      senha: password,
+    });
+
+    const { token } = resposta.data;
+    console.log('Token recebido:', token);
+    localStorage.setItem('token', token);
+    onLogin();
+    navigate('/dashboard');
+  } catch (erro: unknown) { 
+    console.error('Erro ao fazer login', erro); 
   }
+  finally{
+     setLoading(false)
+  }
+}
+
 
   const handleRegister = () => {
-    navigate("/cadastro") // redireciona para a página de cadastro
+    navigate("/cadastro") 
   }
 
   return (
@@ -39,6 +62,8 @@ export default function SignIn({onLogin}: SignInProps){
               type="email"
               name="email"
               className="bg-transparent outline-none border-none text-black dark:text-white placeholder:text-gray-400 w-full"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="Digite seu e-mail"
             />
           </div>
@@ -52,13 +77,17 @@ export default function SignIn({onLogin}: SignInProps){
               type="password"
               name="password"
               className="bg-transparent outline-none border-none text-black dark:text-white placeholder:text-gray-400 w-full"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Digite sua senha"
             />
           </div>
         </label>
 
-        <button className="bg-sky-500 text-white p-2 rounded-md w-full hover:bg-sky-600 transition cursor-pointer">
-          Login
+        <button 
+          disabled={loading}
+          className="flex items-center justify-center bg-sky-500 text-white p-2 rounded-md w-full hover:bg-sky-600 transition cursor-pointer">
+            {loading ? <Loader className="animate-spin w-5 h-5" /> : 'Login'}
         </button>
       </form>
 

@@ -1,125 +1,17 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import CreateLicenseModal from './createLicenseModal'
+import api from '../../../services/api'
+import { ClipboardCopy, Inbox } from 'lucide-react'
+interface TableProps {
+  onRefresh: () => void
+}
 
-const data = [
-  {
-    id: 1,
-    nome: 'João Silva',
-    email: 'joao@email.com',
-    codigoCompra: 'CMP-12983',
-    licenca: 'LIC-456XYZ',
-    status: 'Ativa',
-    validade: '15/12/2025',
-    dataCompra: '10/01/2024',
-  },
-  {
-    id: 2,
-    nome: 'Maria Santos',
-    email: 'maria@email.com',
-    codigoCompra: 'CMP-55421',
-    licenca: 'LIC-123ABC',
-    status: 'Expirada',
-    validade: '10/07/2023',
-    dataCompra: '05/02/2022',
-  },
-  {
-    id: 3,
-    nome: 'Carlos Oliveira',
-    email: 'carlos@email.com',
-    codigoCompra: 'CMP-98345',
-    licenca: 'LIC-789GHI',
-    status: 'Criada',
-    validade: '20/11/2025',
-    dataCompra: '03/05/2024',
-  },
-  {
-    id: 4,
-    nome: 'Ana Costa',
-    email: 'ana@email.com',
-    codigoCompra: 'CMP-11122',
-    licenca: 'LIC-999ZZZ',
-    status: 'Ativa',
-    validade: '01/01/2026',
-    dataCompra: '18/02/2024',
-  },
-  {
-    id: 5,
-    nome: 'Lucas Rocha',
-    email: 'lucas@email.com',
-    codigoCompra: 'CMP-44661',
-    licenca: 'LIC-332LMN',
-    status: 'Expirada',
-    validade: '02/04/2023',
-    dataCompra: '10/10/2021',
-  },
-  {
-    id: 6,
-    nome: 'Fernanda Lima',
-    email: 'fernanda@email.com',
-    codigoCompra: 'CMP-88992',
-    licenca: 'LIC-543QWE',
-    status: 'Ativa',
-    validade: '10/08/2025',
-    dataCompra: '15/03/2024',
-  },
-  {
-    id: 7,
-    nome: 'Bruno Alves',
-    email: 'bruno@email.com',
-    codigoCompra: 'CMP-77338',
-    licenca: 'LIC-201RTY',
-    status: 'Criada',
-    validade: '31/12/2025',
-    dataCompra: '07/07/2024',
-  },
-  {
-    id: 8,
-    nome: 'Juliana Mendes',
-    email: 'juliana@email.com',
-    codigoCompra: 'CMP-11442',
-    licenca: 'LIC-789UIO',
-    status: 'Expirada',
-    validade: '28/09/2022',
-    dataCompra: '25/04/2022',
-  },
-  {
-    id: 9,
-    nome: 'Pedro Cardoso',
-    email: 'pedro@email.com',
-    codigoCompra: 'CMP-77885',
-    licenca: 'LIC-567TYU',
-    status: 'Ativa',
-    validade: '05/03/2026',
-    dataCompra: '21/06/2024',
-  },
-  {
-    id: 10,
-    nome: 'Camila Ribeiro',
-    email: 'camila@email.com',
-    codigoCompra: 'CMP-33221',
-    licenca: 'LIC-321ASD',
-    status: 'Criada',
-    validade: '12/10/2025',
-    dataCompra: '12/05/2024',
-  },
-  {
-    id: 11,
-    nome: 'José Pereira',
-    email: 'jose@email.com',
-    codigoCompra: 'CMP-33227',
-    licenca: 'LIC-321ASD',
-    status: 'Criada',
-    validade: '12/10/2025',
-    dataCompra: '12/05/2024',
-  },
-]
-
-
-export default function Table() {
+export default function Table( { onRefresh }: TableProps) {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState('Todos')
   const [currentPage, setCurrentPage] = useState(1)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [data, setData] = useState([] as License[])
 
   const itemsPerPage = 10
 
@@ -127,39 +19,35 @@ type License = {
   id: number
   nome: string
   email: string
-  codigoCompra: string
-  licenca: string
+  codigo_compra: string
+  codigo: string
   status: string
   validade: string
-  dataCompra: string
+  created_at: string 
+  quantidade: number
 }
 
-const handleCreateLicense = (data: {
-  codigoCompra: string
-  email: string
-  nome: string
-  quantidade: number
-  validade: string
-}) => {
-  // Exemplo de mapeamento para License, se necessário
-  const newLicense: License = {
-    id: Date.now(), // ou outra lógica para gerar ID
-    nome: data.nome,
-    email: data.email,
-    codigoCompra: data.codigoCompra,
-    licenca: '', // definir conforme necessário
-    status: 'Criada', // ou outro valor padrão
-    validade: data.validade,
-    dataCompra: new Date().toLocaleDateString('pt-BR'), // ou outro valor
+
+
+const getData = async () => {
+  try {
+    const response = await api.get('/licencas')
+    console.log('Licenças recebidas:', response.data)
+    setData(response.data)
+   
+  } catch (error) {
+    console.error('Erro ao buscar licenças:', error)
   }
-  console.log('Nova licença:', newLicense)
-  // aqui você pode enviar via API, ou adicionar ao seu array `data`
+  finally {
+    onRefresh()
+  }
 }
+
 
   const filtered = data.filter((item) => {
     const searchMatch =
       item.nome.toLowerCase().includes(search.toLowerCase()) ||
-      item.codigoCompra.toLowerCase().includes(search.toLowerCase())
+      item.codigo_compra.toLowerCase().includes(search.toLowerCase())
 
     const statusMatch =
       statusFilter === 'Todos' || item.status.toLowerCase() === statusFilter.toLowerCase()
@@ -176,6 +64,10 @@ const goToPage = (page: number) => {
     setCurrentPage(page)
   }
 }
+
+useEffect(() => {
+  getData()
+}, [])
 
   return (
   <div className="space-y-4">
@@ -196,7 +88,7 @@ const goToPage = (page: number) => {
         className="w-full md:w-1/4 px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white "
       >
         <option value="Todos">Todos os status</option>
-        <option value="Ativa">Ativa</option>
+        <option value="Ativada">Ativada</option>
         <option value="Expirada">Expirada</option>
         <option value="Criada">Criada</option>
       </select>
@@ -209,10 +101,10 @@ const goToPage = (page: number) => {
   </div>
   
   <CreateLicenseModal
-  isOpen={isModalOpen}
-  onClose={() => setIsModalOpen(false)}
-  onSubmit={handleCreateLicense}
-/>
+    isOpen={isModalOpen}
+    onClose={() => setIsModalOpen(false)}
+    onRefresh={getData}
+  />
 
   {/* Tabela */}
   <div className="overflow-x-auto rounded-xl shadow-lg ring-1 ring-slate-200 dark:ring-zinc-700">
@@ -224,6 +116,7 @@ const goToPage = (page: number) => {
           <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Código de Compra</th>
           <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Licença</th>
           <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Status</th>
+          
           <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Validade</th>
           <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">Data de Compra</th>
         </tr>
@@ -233,12 +126,23 @@ const goToPage = (page: number) => {
           <tr key={item.id}>
             <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.nome}</td>
             <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.email}</td>
-            <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.codigoCompra}</td>
-            <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.licenca}</td>
+            <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.codigo_compra}</td>
+            <td className="px-4 py-3 text-gray-700 dark:text-gray-300 flex items-center gap-2">
+            {item.codigo}
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(item.codigo)
+              }}
+              title="Copiar código"
+              className="p-1 rounded hover:bg-gray-200 dark:hover:bg-zinc-700 transition"
+            >
+              <ClipboardCopy className="w-4 h-4 text-gray-500 dark:text-gray-300" />
+            </button>
+          </td>
             <td className="px-4 py-3">
               <span
                 className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
-                  item.status === 'Ativa'
+                  item.status === 'Ativada'
                     ? 'bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300'
                     : item.status === 'Expirada'
                     ? 'bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300'
@@ -248,14 +152,16 @@ const goToPage = (page: number) => {
                 {item.status}
               </span>
             </td>
+            
             <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.validade}</td>
-            <td className="px-4 py-3 text-gray-700 dark:text-gray-300">{item.dataCompra}</td>
+            <td className="px-4 py-3 text-gray-700 dark:text-gray-300"> {new Date(item.created_at).toLocaleDateString('pt-BR')}</td>
           </tr>
         ))}
         {filtered.length === 0 && (
           <tr>
             <td colSpan={7} className="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
-              Nenhum resultado encontrado.
+              <Inbox className="w-16 h-16 mx-auto mb-2 text-gray-400 dark:text-gray-500" strokeWidth={1} />
+              Nenhum resultado encontrado
             </td>
           </tr>
         )}
