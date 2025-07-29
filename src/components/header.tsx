@@ -1,42 +1,121 @@
-import { KeySquareIcon, Moon, SunIcon } from "lucide-react"
-import { useLayoutEffect, useState } from "react"
+import { KeySquareIcon, Moon, SunIcon, Menu, X } from "lucide-react";
+import { useLayoutEffect, useState } from "react";
 
 interface HeaderProps {
   LogOut: () => void;
+  LogLicense: () => void;
+  LogKey: () => void;
 }
 
-export default function Header({ LogOut }: HeaderProps) {
-  const [isDark, setIsDark] = useState(false)
+export default function Header({ LogOut, LogLicense, LogKey }: HeaderProps) {
+  const [isDark, setIsDark] = useState(false);
+  const [buttonActive, setButtonActive] = useState<'licenca' | 'chave'>('licenca');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  useLayoutEffect(() => {
+    const root = document.documentElement;
+    if (isDark) root.classList.add('dark');
+    else root.classList.remove('dark');
+  }, [isDark]);
+
+  const handleLicenca = () => {
+    setButtonActive('licenca');
+    LogLicense();
+    setIsMobileMenuOpen(false);
+  };
+
+  const handleChave = () => {
+    setButtonActive('chave');
+    LogKey();
+    setIsMobileMenuOpen(false);
+  };
 
   const handleSubmit = () => {
     
-    LogOut()
-  }
+    setIsMobileMenuOpen(false);
+     setButtonActive('licenca')
+     LogOut();
+  };
 
-  useLayoutEffect(() => {
-    // Usa useLayoutEffect para garantir que a classe 'dark' entra antes da renderização
-    const root = document.documentElement
-    if (isDark) {
-      root.classList.add('dark')
-    } else {
-      root.classList.remove('dark')
-    }
-    console.log('Theme changed:', isDark ? 'Dark' : 'Light')
-  }, [isDark])
   return (
-    <header className="w-full flex flex-row justify-between transition-colors duration-300 bg-white text-black dark:bg-zinc-800 dark:text-white border-b-2 border-sky-300 p-4">
-      <div className=" flex gap-2 text-2xl justify-center items-center">
-        <KeySquareIcon size={24}/> 
-        <span>License</span>
+    <header className="w-full relative flex justify-between items-center transition-colors duration-300 bg-white text-black dark:bg-zinc-800 dark:text-white border-b-2 border-sky-300 p-4">
+      <div className="flex items-center gap-2">
+        <KeySquareIcon size={24} />
+        <span className="text-2xl md:border-r-2 md:border-black pr-2 dark:border-white">License</span>
+
+        {/* Menu desktop */}
+        <div className="hidden lg:flex gap-2 ml-4">
+          <button
+            onClick={handleLicenca}
+            className={`p-2 rounded-md text-sm hover:font-medium hover:bg-zinc-100 dark:hover:bg-zinc-400/10 ${
+              buttonActive === 'licenca' ? 'bg-zinc-200 dark:bg-zinc-400/10' : ''
+            }`}
+          >
+            Licença
+          </button>
+          <button
+            onClick={handleChave}
+            className={`p-2 rounded-md text-sm hover:font-medium hover:bg-zinc-100 dark:hover:bg-zinc-400/10 ${
+              buttonActive === 'chave' ? 'bg-zinc-200 dark:bg-zinc-400/10' : ''
+            }`}
+          >
+            Chave
+          </button>
+        </div>
       </div>
-      <div className="flex gap-8 items-center">
+
+      {/* Ações desktop */}
+      <div className="hidden lg:flex items-center gap-4">
         <button onClick={() => setIsDark(!isDark)}>
           {isDark ? <SunIcon /> : <Moon />}
         </button>
-        <button onClick={handleSubmit}>
-          Sair
+        <button onClick={handleSubmit}>Sair</button>
+      </div>
+
+      {/* Botão de menu mobile */}
+      <div className="lg:hidden">
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+          {isMobileMenuOpen ? <X /> : <Menu />}
         </button>
       </div>
+
+      {/* Menu Mobile Dropdown */}
+      {isMobileMenuOpen && (
+        <div className="absolute top-full left-0 w-full flex flex-col gap-2 bg-white dark:bg-zinc-800 p-4 border-t border-zinc-300 dark:border-zinc-600 z-50">
+          <button
+            onClick={handleLicenca}
+            className={`rounded-md p-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-400/10 ${
+              buttonActive === 'licenca' ? 'bg-zinc-200 dark:bg-zinc-400/10' : ''
+            }`}
+          >
+            Licença
+          </button>
+          <button
+            onClick={handleChave}
+            className={`rounded-md p-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-400/10 ${
+              buttonActive === 'chave' ? 'bg-zinc-200 dark:bg-zinc-400/10' : ''
+            }`}
+          >
+            Chave
+          </button>
+          <button onClick={() => setIsDark(!isDark)} className="rounded-md p-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-400/10">
+           {isDark ? (
+              <span className="flex items-center gap-2">
+                Modo Claro
+                <SunIcon size={16} />
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                Modo Escuro
+                <Moon size={16} />
+              </span>
+            )}
+          </button>
+          <button onClick={handleSubmit} className="rounded-md p-2 text-left hover:bg-red-100 dark:hover:bg-red-900/30 text-red-600 dark:text-red-300">
+            Sair
+          </button>
+        </div>
+      )}
     </header>
-  )
+  );
 }

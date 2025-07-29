@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom'
 
 import Header from './components/header'
 import SignIn from './components/singin'
@@ -9,10 +9,13 @@ import PrivateRoute from './routes/privateRoutes'
 import { Toaster} from 'sonner'
 
 import './global.css'
+import Key from './components/keys/key'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isPage, setIspage] = useState('dashboard')
+
 
   useEffect(() => {
     const authenticated = localStorage.getItem('authenticated')
@@ -43,7 +46,15 @@ export default function App() {
     localStorage.removeItem('authenticated')
     localStorage.removeItem('expires_at')
     localStorage.removeItem('token')
+    setIspage("dashboard")
     setIsAuthenticated(false)
+  }
+
+  const handleLicenca = ()=>{
+   setIspage("dashboard")
+  }
+  const handleChave = ()=>{
+   setIspage("key")
   }
 
   if (isLoading) {
@@ -69,10 +80,11 @@ export default function App() {
                 <PrivateRoute isAuthenticated={isAuthenticated}>
                   <>
                     <header className="w-full">
-                      <Header LogOut={handleLogout} />
+                      <Header LogOut={handleLogout} LogKey={handleChave} LogLicense={handleLicenca}/>
                     </header>
                     <main className="flex-1 h-screen overflow-auto">
-                      <Dashboard />
+                      {isPage==="dashboard" ? <Dashboard />: <Key/>}
+                      
                     </main>
                   </>
                 </PrivateRoute>
