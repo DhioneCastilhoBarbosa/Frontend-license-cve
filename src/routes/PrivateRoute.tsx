@@ -7,5 +7,5 @@ interface PrivateRouteProps {
 }
 
 export default function PrivateRoute({ children, isAuthenticated }: PrivateRouteProps) {
-  return isAuthenticated ? children : <Navigate to="/solicitar-chave" replace />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 }

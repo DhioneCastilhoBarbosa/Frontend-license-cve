@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate} from 'react-router-dom'
+import { Routes, Route, Navigate} from 'react-router-dom'
+import { useNavigate } from "react-router-dom";
 
 import Header from './components/header'
 import SignIn from './components/singin'
@@ -15,9 +16,11 @@ import PrivateRoute from './routes/PrivateRoute'
 
 
 export default function App() {
+   const navigate = useNavigate()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isPage, setIspage] = useState('dashboard')
+
 
 
   useEffect(() => {
@@ -51,6 +54,7 @@ export default function App() {
     localStorage.removeItem('token')
     setIspage("dashboard")
     setIsAuthenticated(false)
+    navigate("/login", { replace: true }); // força ir para login
   }
 
   const handleLicenca = ()=>{
@@ -70,14 +74,18 @@ export default function App() {
 
   return (
     <>
-      <Router>
+     
         <div className="h-screen flex flex-col bg-white text-black dark:bg-zinc-900 dark:text-white overflow-hidden">
           <Routes>
-            <Route path="/" element={<Navigate to="/solicitar-chave" />} />
-            <Route path="/solicitar-chave" element={<RequestKey/>} />
+            {/* Primeira rota de acesso → /solicitar-chave */}
+            <Route path="/" element={<Navigate to="/solicitar-chave" replace />} />
+
+            {/* Públicas */}
+            <Route path="/solicitar-chave" element={<RequestKey />} />
             <Route path="/login" element={<SignIn onLogin={handleLogin} />} />
             <Route path="/cadastro" element={<SignUp />} />
 
+            {/* Protegida */}
             <Route
               path="/dashboard"
               element={
@@ -87,18 +95,19 @@ export default function App() {
                       <Header LogOut={handleLogout} LogKey={handleChave} LogLicense={handleLicenca}/>
                     </header>
                     <main className="flex-1 h-screen overflow-auto">
-                      {isPage==="dashboard" ? <Dashboard />: <Key/>}
-                      
+                      {isPage === "dashboard" ? <Dashboard /> : <Key />}
                     </main>
                   </>
                 </PrivateRoute>
               }
             />
 
-            <Route path="*" element={<Navigate to="/solicitar-chave" />} />
+            {/* Qualquer outra rota → /solicitar-chave */}
+            <Route path="*" element={<Navigate to="/solicitar-chave" replace />} />
           </Routes>
+
         </div>
-      </Router>
+      
       <Toaster richColors position="top-right" />
     </>
   )
