@@ -31,7 +31,7 @@ export default function CreateKeyModal({ isOpen, onClose, onRefresh }: CreateKey
     }
     try {
       setLoading(true)
-      await api.post('/criar-acesso', data)
+      await api.post('/criar-chave', data)
       console.log('Nova chave:', data)
       toast.success('Chave de acesso criada com sucesso!')
       onRefresh() // Chama a função para atualizar os dados na tabela

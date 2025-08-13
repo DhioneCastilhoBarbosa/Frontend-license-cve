@@ -10,6 +10,7 @@ import { Toaster} from 'sonner'
 
 import './global.css'
 import Key from './components/keys/key'
+import RequestKey from './components/requestKey'
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -70,7 +71,8 @@ export default function App() {
       <Router>
         <div className="h-screen flex flex-col bg-white text-black dark:bg-zinc-900 dark:text-white overflow-hidden">
           <Routes>
-            <Route path="/" element={<Navigate to="/login" />} />
+            <Route path="/" element={<Navigate to="/solicitar-chave" />} />
+            <Route path="/solicitar-chave" element={<RequestKey/>} />
             <Route path="/login" element={<SignIn onLogin={handleLogin} />} />
             <Route path="/cadastro" element={<SignUp />} />
 
