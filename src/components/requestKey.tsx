@@ -17,9 +17,9 @@ export default function RequestKey(){
   const handleCreateLicense = async(data: {
     cpf: string
     email: string
-    name: string
+    nome: string
   }) => {
-    if (!data.cpf || !data.email || !data.name) {
+    if (!data.cpf || !data.email || !data.nome) {
       toast.error('Por favor, preencha todos os campos.')
       return
     }
@@ -61,7 +61,7 @@ export default function RequestKey(){
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          handleCreateLicense({ cpf, email,name });
+          handleCreateLicense({ cpf, email,nome:name });
         }}
         className="flex flex-col justify-center items-center gap-4 mt-8 w-full max-w-md"
       >
@@ -77,6 +77,7 @@ export default function RequestKey(){
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Digite seu nome"
+              required
             />
           </div>
         </label>
@@ -92,6 +93,7 @@ export default function RequestKey(){
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="Digite seu e-mail"
+              required
             />
           </div>
         </label>
@@ -105,8 +107,10 @@ export default function RequestKey(){
               name="cpf"
               className="bg-transparent outline-none border-none text-black dark:text-white placeholder:text-gray-400 w-full"
               value={cpf}
-              onChange={(e) => setCpf(e.target.value)}
+              onChange={(e) => setCpf(e.target.value.replace(/\D/g, ""))}
+              maxLength={11} // opcional, limite de 11 dígitos
               placeholder="Digite seu CPF"
+              required
             />
           </div>
         </label>
