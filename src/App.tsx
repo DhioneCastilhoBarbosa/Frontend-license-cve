@@ -5,12 +5,14 @@ import Header from './components/header'
 import SignIn from './components/singin'
 import SignUp from './components/signUp' // supondo que existe
 import Dashboard from './components/dashboard/dashboard'
-import PrivateRoute from './routes/privateRoutes'
+
 import { Toaster} from 'sonner'
 
 import './global.css'
 import Key from './components/keys/key'
 import RequestKey from './components/requestKey'
+import PrivateRoute from './routes/PrivateRoute'
+
 
 export default function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
