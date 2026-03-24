@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 import CreateLicenseModal from "./createkeyModal";
+import DeleteKeyConfirmModal from "./deleteKeyConfirmModal";
+import EditKeyStatusModal from "./editKeyStatusModal";
 import api from "../../../services/api";
 import { ClipboardCopy, Eye, EyeOff, Inbox } from "lucide-react";
+import { toast } from "sonner";
 interface TableProps {
   onRefresh: () => void;
 }
@@ -11,6 +14,19 @@ export default function Table({ onRefresh }: TableProps) {
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    chave: string;
+    nome: string;
+  } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editStatusTarget, setEditStatusTarget] = useState<{
+    chave: string;
+    nome: string;
+    status: string;
+  } | null>(null);
+  const [statusUpdatingChave, setStatusUpdatingChave] = useState<string | null>(
+    null
+  );
   const [data, setData] = useState([] as Keys[]);
   const [showCPF, setShowCPF] = useState<{ [key: string]: boolean }>({});
 
@@ -50,6 +66,56 @@ export default function Table({ onRefresh }: TableProps) {
       onRefresh();
     }
   };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { chave } = deleteTarget;
+    try {
+      setDeleteLoading(true);
+      await api.delete("/deletar-chave", { params: { chave } });
+      toast.success("Chave excluída com sucesso.");
+      setDeleteTarget(null);
+      await getData();
+    } catch (error) {
+      toast.error("Erro ao excluir chave. Tente novamente.");
+      console.error("Erro ao excluir chave:", error);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const closeDeleteModal = () => {
+    if (deleteLoading) return;
+    setDeleteTarget(null);
+  };
+
+  const closeEditStatusModal = () => {
+    if (statusUpdatingChave !== null) return;
+    setEditStatusTarget(null);
+  };
+
+  const handleConfirmEditStatus = async (status: string) => {
+    if (!editStatusTarget) return;
+    const { chave } = editStatusTarget;
+    try {
+      setStatusUpdatingChave(chave);
+      await api.put("/atualizar-status-chave", { chave, status });
+      toast.success("Status da chave atualizado.");
+      setEditStatusTarget(null);
+      await getData();
+    } catch (error) {
+      toast.error("Erro ao atualizar status. Tente novamente.");
+      console.error("Erro ao atualizar status da chave:", error);
+    } finally {
+      setStatusUpdatingChave(null);
+    }
+  };
+
+  const actionsDisabled =
+    deleteTarget !== null ||
+    deleteLoading ||
+    editStatusTarget !== null ||
+    statusUpdatingChave !== null;
 
   const filtered = data.filter((item) => {
     const searchMatch =
@@ -124,6 +190,28 @@ export default function Table({ onRefresh }: TableProps) {
         onRefresh={getData}
       />
 
+      <DeleteKeyConfirmModal
+        isOpen={deleteTarget !== null}
+        onClose={closeDeleteModal}
+        nome={deleteTarget?.nome ?? ""}
+        chave={deleteTarget?.chave ?? ""}
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
+
+      <EditKeyStatusModal
+        isOpen={editStatusTarget !== null}
+        onClose={closeEditStatusModal}
+        nome={editStatusTarget?.nome ?? ""}
+        chave={editStatusTarget?.chave ?? ""}
+        currentStatus={editStatusTarget?.status ?? "Criada"}
+        loading={
+          editStatusTarget !== null &&
+          statusUpdatingChave === editStatusTarget.chave
+        }
+        onConfirm={handleConfirmEditStatus}
+      />
+
       {/* Tabela */}
       <div className="overflow-x-auto rounded-xl shadow-lg ring-1 ring-slate-200 dark:ring-zinc-700">
         <table className="min-w-full divide-y divide-gray-200 dark:divide-zinc-700 text-sm">
@@ -146,6 +234,9 @@ export default function Table({ onRefresh }: TableProps) {
               </th>
               <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
                 Data de criação
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
+                Ações
               </th>
             </tr>
           </thead>
@@ -203,6 +294,37 @@ export default function Table({ onRefresh }: TableProps) {
                 <td className="px-4 py-3 text-gray-700 dark:text-gray-300">
                   {" "}
                   {new Date(item.created_at).toLocaleDateString("pt-BR")}
+                </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-row flex-nowrap items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setEditStatusTarget({
+                          chave: item.chave,
+                          nome: item.nome,
+                          status: item.status,
+                        })
+                      }
+                      disabled={actionsDisabled}
+                      className="shrink-0 px-3 py-1.5 rounded-md bg-sky-500 text-white text-xs font-medium hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDeleteTarget({
+                          chave: item.chave,
+                          nome: item.nome,
+                        })
+                      }
+                      disabled={actionsDisabled}
+                      className="shrink-0 px-3 py-1.5 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+                    >
+                      Deletar
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}

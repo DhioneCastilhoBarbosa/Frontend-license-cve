@@ -1,58 +1,72 @@
-import { Dialog } from '@headlessui/react'
-import { useState } from 'react'
-import api from '../../../services/api'
-import { toast } from 'sonner'
-import { Loader } from 'lucide-react'
+import { Dialog } from "@headlessui/react";
+import { useState } from "react";
+import api from "../../../services/api";
+import { toast } from "sonner";
+import { Loader } from "lucide-react";
 
 interface CreateLicenseModalProps {
-  isOpen: boolean
-  onClose: () => void
-  onRefresh: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  onRefresh: () => void;
 }
 
-export default function CreateLicenseModal({ isOpen, onClose, onRefresh }: CreateLicenseModalProps) {
-  const [codigo_compra, setCodigoCompra] = useState('')
-  const [email, setEmail] = useState('')
-  const [nome, setNome] = useState('')
-  const [quantidade, setQuantidade] = useState(1)
-  const [validade, setValidade] = useState('')
-  const [loading, setLoading] = useState(false)
+export default function CreateLicenseModal({
+  isOpen,
+  onClose,
+  onRefresh,
+}: CreateLicenseModalProps) {
+  const [codigo_compra, setCodigoCompra] = useState("");
+  const [email, setEmail] = useState("");
+  const [nome, setNome] = useState("");
+  const [quantidade, setQuantidade] = useState(1);
+  const [validade, setValidade] = useState("");
+  const [coringa, setCoringa] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  
-
-  const handleCreateLicense = async(data: {
-    codigo_compra: string
-    email: string
-    nome: string
-    quantidade: number
-    validade: number
+  const handleCreateLicense = async (data: {
+    codigo_compra: string;
+    email: string;
+    nome: string;
+    quantidade: number;
+    validade: number;
+    coringa: boolean;
   }) => {
-    if (!data.codigo_compra || !data.email || !data.nome || !data.quantidade || !data.validade) {
-      toast.error('Por favor, preencha todos os campos.')
-      return
+    if (
+      !data.codigo_compra ||
+      !data.email ||
+      !data.nome ||
+      !data.quantidade ||
+      !data.validade
+    ) {
+      toast.error("Por favor, preencha todos os campos.");
+      return;
     }
     try {
-      setLoading(true)
-      await api.post('/criar-licenca', data)
-      console.log('Nova licença:', data)
-      toast.success('Licença criada com sucesso!')
-      onRefresh() // Chama a função para atualizar os dados na tabela
+      setLoading(true);
+      await api.post("/criar-licenca", data);
+      console.log("Nova licença:", data);
+      toast.success("Licença criada com sucesso!");
+      onRefresh(); // Chama a função para atualizar os dados na tabela
     } catch (error) {
-      toast.error('Erro ao criar licença. Tente novamente.')
-      console.error('Erro ao criar licença:', error)
-    }finally {
-      setLoading(false)
-      onClose()
+      toast.error("Erro ao criar licença. Tente novamente.");
+      console.error("Erro ao criar licença:", error);
+    } finally {
+      setLoading(false);
+      onClose();
     }
-   
-  }
-
-
+  };
 
   return (
-    <Dialog open={isOpen} onClose={onClose} className="fixed z-50 inset-0 overflow-y-auto">
+    <Dialog
+      open={isOpen}
+      onClose={onClose}
+      className="fixed z-50 inset-0 overflow-y-auto"
+    >
       <div className="flex items-center justify-center min-h-screen px-4">
-        <div className="fixed inset-0 bg-black/60 dark:bg-black/60" aria-hidden="true" />
+        <div
+          className="fixed inset-0 bg-black/60 dark:bg-black/60"
+          aria-hidden="true"
+        />
 
         <div className="relative bg-white dark:bg-zinc-900 rounded-xl shadow-lg ring-1 ring-slate-200 dark:ring-zinc-700 w-full max-w-md mx-auto p-6 space-y-4 z-50">
           <Dialog.Title className="text-lg font-semibold text-gray-800 dark:text-white">
@@ -61,11 +75,14 @@ export default function CreateLicenseModal({ isOpen, onClose, onRefresh }: Creat
 
           <div className="space-y-3">
             <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
-              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="codigoCompra w-full">
+              <label
+                className="text-sm text-gray-700 dark:text-gray-300"
+                htmlFor="codigoCompra w-full"
+              >
                 Código de Compra
               </label>
               <input
-                 className="min-w-68 px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
+                className="min-w-68 px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white placeholder-gray-400 dark:placeholder-gray-500"
                 type="text"
                 id="codigoCompra"
                 placeholder="Código de Compra"
@@ -75,36 +92,45 @@ export default function CreateLicenseModal({ isOpen, onClose, onRefresh }: Creat
               />
             </div>
             <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
-              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="email">
+              <label
+                className="text-sm text-gray-700 dark:text-gray-300"
+                htmlFor="email"
+              >
                 Email
               </label>
-            <input
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
-            />
+              <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
+              />
             </div>
             <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
-              <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="nome">
+              <label
+                className="text-sm text-gray-700 dark:text-gray-300"
+                htmlFor="nome"
+              >
                 Nome
               </label>
-            <input
-              type="text"
-              placeholder="Nome"
-              value={nome}
-              onChange={(e) => setNome(e.target.value)}
-              required
-              className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
-            />
+              <input
+                type="text"
+                placeholder="Nome"
+                value={nome}
+                onChange={(e) => setNome(e.target.value)}
+                required
+                className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
+              />
             </div>
           </div>
           <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
-            <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="quantidade">
+            <label
+              className="text-sm text-gray-700 dark:text-gray-300"
+              htmlFor="quantidade"
+            >
               Quantidade
-            </label>  
+            </label>
             <input
               type="number"
               placeholder="Quantidade"
@@ -116,7 +142,10 @@ export default function CreateLicenseModal({ isOpen, onClose, onRefresh }: Creat
             />
           </div>
           <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
-            <label className="text-sm text-gray-700 dark:text-gray-300" htmlFor="validade">
+            <label
+              className="text-sm text-gray-700 dark:text-gray-300"
+              htmlFor="validade"
+            >
               Validade
             </label>
             <select
@@ -125,13 +154,48 @@ export default function CreateLicenseModal({ isOpen, onClose, onRefresh }: Creat
               required
               className="min-w-68  px-4 py-2 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 text-sm text-gray-800 dark:text-white"
             >
-            <option value="">Selecione a validade</option>
-            <option value="12">12 meses</option>
-            <option value="24">24 meses</option>
-            <option value="36">36 meses</option>
-            <option value="48">48 meses</option>
-            <option value="60">60 meses</option>
-          </select>
+              <option value="">Selecione a validade</option>
+              <option value="12">12 meses</option>
+              <option value="24">24 meses</option>
+              <option value="36">36 meses</option>
+              <option value="48">48 meses</option>
+              <option value="60">60 meses</option>
+            </select>
+          </div>
+
+          <div className="flex md:flex-row flex-col justify-between md:items-center gap-2">
+            <span
+              className="text-sm text-gray-700 dark:text-gray-300 shrink-0"
+              id="tipo-licenca-label"
+            >
+              Tipo de licença
+            </span>
+            <div
+              role="group"
+              aria-labelledby="tipo-licenca-label"
+              className="min-w-68 w-full md:w-auto px-4 py-2.5 rounded-md border border-gray-300 dark:border-zinc-600 bg-white dark:bg-zinc-800 flex flex-col sm:flex-row sm:flex-wrap justify-between gap-3 sm:gap-4"
+            >
+              <label className="flex items-center gap-2 text-sm text-gray-800 dark:text-white cursor-pointer">
+                <input
+                  type="radio"
+                  name="tipo-licenca"
+                  checked={!coringa}
+                  onChange={() => setCoringa(false)}
+                  className="text-sky-500 border-gray-300 dark:border-zinc-600 focus:ring-sky-500"
+                />
+                Padrão
+              </label>
+              <label className="flex items-center gap-2 text-sm text-gray-800 dark:text-white cursor-pointer">
+                <input
+                  type="radio"
+                  name="tipo-licenca"
+                  checked={coringa}
+                  onChange={() => setCoringa(true)}
+                  className="text-sky-500 border-gray-300 dark:border-zinc-600 focus:ring-sky-500"
+                />
+                Coringa
+              </label>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 pt-4">
@@ -143,20 +207,23 @@ export default function CreateLicenseModal({ isOpen, onClose, onRefresh }: Creat
             </button>
 
             <button
-              onClick={() => handleCreateLicense({
-                codigo_compra,
-                email,
-                nome,
-                quantidade: Number(quantidade),
-                validade: Number(validade)
-              })}
+              onClick={() =>
+                handleCreateLicense({
+                  codigo_compra,
+                  email,
+                  nome,
+                  quantidade: Number(quantidade),
+                  validade: Number(validade),
+                  coringa,
+                })
+              }
               className="px-4 py-2 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition"
             >
-                {loading ? <Loader className="animate-spin w-5 h-5" /> : 'Criar'}
+              {loading ? <Loader className="animate-spin w-5 h-5" /> : "Criar"}
             </button>
           </div>
         </div>
       </div>
     </Dialog>
-  )
+  );
 }

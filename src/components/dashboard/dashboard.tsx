@@ -10,15 +10,15 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="h-full flex flex-col md:overflow-hidden overflow-auto items-center">
+    <div className="h-full flex flex-col md:overflow-hidden overflow-auto items-stretch w-full">
       {/* Cards fixos no topo */}
-      <div className="p-8 shrink-0">
+      <div className="p-8 shrink-0 w-full flex justify-center">
         <Cards ref={cardsRef} />
       </div>
 
-      {/* Área da tabela com rolagem */}
-      <div className="flex-1 md:overflow-y-auto p-6 pt-0 md:w-5/6 w-full">
-          <Table onRefresh={handleRefreshFromTable} />
+      {/* Área da tabela com rolagem — largura total para reduzir rolagem horizontal */}
+      <div className="flex-1 md:overflow-y-auto w-full min-w-0 px-4 sm:px-6 lg:px-8 pt-0 pb-6">
+        <Table onRefresh={handleRefreshFromTable} />
       </div>
     </div>
   )

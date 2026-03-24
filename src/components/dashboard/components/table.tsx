@@ -1,7 +1,15 @@
 import { useEffect, useState } from "react";
 import CreateLicenseModal from "./createLicenseModal";
+import DeleteLicenseConfirmModal from "./deleteLicenseConfirmModal";
+import EditLicenseStatusModal from "./editLicenseStatusModal";
 import api from "../../../services/api";
 import { ClipboardCopy, Inbox } from "lucide-react";
+import { toast } from "sonner";
+
+function isCoringaLicense(status: string) {
+  return status.toLowerCase() === "coringa";
+}
+
 interface TableProps {
   onRefresh: () => void;
 }
@@ -11,6 +19,19 @@ export default function Table({ onRefresh }: TableProps) {
   const [statusFilter, setStatusFilter] = useState("Todos");
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    codigo: string;
+    nome: string;
+  } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editStatusTarget, setEditStatusTarget] = useState<{
+    codigo: string;
+    nome: string;
+    status: string;
+  } | null>(null);
+  const [statusUpdatingCodigo, setStatusUpdatingCodigo] = useState<string | null>(
+    null
+  );
   const [data, setData] = useState([] as License[]);
 
   const itemsPerPage = 10;
@@ -38,6 +59,56 @@ export default function Table({ onRefresh }: TableProps) {
       onRefresh();
     }
   };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    const { codigo } = deleteTarget;
+    try {
+      setDeleteLoading(true);
+      await api.delete("/deletar-licenca", { params: { codigo } });
+      toast.success("Licença excluída com sucesso.");
+      setDeleteTarget(null);
+      await getData();
+    } catch (error) {
+      toast.error("Erro ao excluir licença. Tente novamente.");
+      console.error("Erro ao excluir licença:", error);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  const closeDeleteModal = () => {
+    if (deleteLoading) return;
+    setDeleteTarget(null);
+  };
+
+  const closeEditStatusModal = () => {
+    if (statusUpdatingCodigo !== null) return;
+    setEditStatusTarget(null);
+  };
+
+  const handleConfirmEditStatus = async (status: string) => {
+    if (!editStatusTarget) return;
+    const { codigo } = editStatusTarget;
+    try {
+      setStatusUpdatingCodigo(codigo);
+      await api.put("/atualizar-licenca", { codigo, status });
+      toast.success("Status da licença atualizado.");
+      setEditStatusTarget(null);
+      await getData();
+    } catch (error) {
+      toast.error("Erro ao atualizar status. Tente novamente.");
+      console.error("Erro ao atualizar licença:", error);
+    } finally {
+      setStatusUpdatingCodigo(null);
+    }
+  };
+
+  const actionsDisabled =
+    deleteTarget !== null ||
+    deleteLoading ||
+    editStatusTarget !== null ||
+    statusUpdatingCodigo !== null;
 
   const filtered = data.filter((item) => {
     const searchMatch =
@@ -98,6 +169,7 @@ export default function Table({ onRefresh }: TableProps) {
             <option value="Ativada">Ativada</option>
             <option value="Expirada">Expirada</option>
             <option value="Criada">Criada</option>
+            <option value="Coringa">Coringa</option>
           </select>
           <button onClick={() => setIsModalOpen(true)}>
             <span className="px-4 py-2 bg-sky-500 text-white rounded-md hover:bg-sky-600 transition cursor-pointer">
@@ -111,6 +183,28 @@ export default function Table({ onRefresh }: TableProps) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onRefresh={getData}
+      />
+
+      <DeleteLicenseConfirmModal
+        isOpen={deleteTarget !== null}
+        onClose={closeDeleteModal}
+        nome={deleteTarget?.nome ?? ""}
+        codigo={deleteTarget?.codigo ?? ""}
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
+
+      <EditLicenseStatusModal
+        isOpen={editStatusTarget !== null}
+        onClose={closeEditStatusModal}
+        nome={editStatusTarget?.nome ?? ""}
+        codigo={editStatusTarget?.codigo ?? ""}
+        currentStatus={editStatusTarget?.status ?? "Criada"}
+        loading={
+          editStatusTarget !== null &&
+          statusUpdatingCodigo === editStatusTarget.codigo
+        }
+        onConfirm={handleConfirmEditStatus}
       />
 
       {/* Tabela */}
@@ -139,6 +233,9 @@ export default function Table({ onRefresh }: TableProps) {
               </th>
               <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
                 Data de Compra
+              </th>
+              <th className="px-4 py-3 text-left font-semibold text-gray-600 dark:text-gray-300">
+                Ações
               </th>
             </tr>
           </thead>
@@ -173,7 +270,9 @@ export default function Table({ onRefresh }: TableProps) {
                         ? "bg-green-100 text-green-600 dark:bg-green-900 dark:text-green-300"
                         : item.status === "Expirada"
                           ? "bg-rose-100 text-rose-600 dark:bg-rose-900 dark:text-rose-300"
-                          : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                          : item.status.toLowerCase() === "coringa"
+                            ? "bg-sky-100 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
+                            : "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
                     }`}
                   >
                     {item.status}
@@ -187,12 +286,52 @@ export default function Table({ onRefresh }: TableProps) {
                   {" "}
                   {new Date(item.created_at).toLocaleDateString("pt-BR")}
                 </td>
+                <td className="px-4 py-3">
+                  <div className="flex flex-row flex-nowrap items-center gap-2">
+                    {isCoringaLicense(item.status) ? (
+                      <span
+                        className="shrink-0 px-3 py-1.5 rounded-md text-xs font-medium invisible pointer-events-none select-none"
+                        aria-hidden
+                      >
+                        Editar
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setEditStatusTarget({
+                            codigo: item.codigo,
+                            nome: item.nome,
+                            status: item.status,
+                          })
+                        }
+                        disabled={actionsDisabled}
+                        className="shrink-0 px-3 py-1.5 rounded-md bg-sky-500 text-white text-xs font-medium hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+                      >
+                        Editar
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setDeleteTarget({
+                          codigo: item.codigo,
+                          nome: item.nome,
+                        })
+                      }
+                      disabled={actionsDisabled}
+                      className="shrink-0 px-3 py-1.5 rounded-md bg-red-600 text-white text-xs font-medium hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition cursor-pointer"
+                    >
+                      Deletar
+                    </button>
+                  </div>
+                </td>
               </tr>
             ))}
             {filtered.length === 0 && (
               <tr>
                 <td
-                  colSpan={7}
+                  colSpan={8}
                   className="px-4 py-6 text-center text-gray-500 dark:text-gray-400"
                 >
                   <Inbox
