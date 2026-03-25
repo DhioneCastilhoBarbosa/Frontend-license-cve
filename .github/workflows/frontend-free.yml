@@ -63,7 +63,15 @@ jobs:
       - name: TruffleHog Scan
         run: |
           set -euo pipefail
-          printf '%s\n' 'node_modules' 'dist' '^\.git/' > "${GITHUB_WORKSPACE}/.trufflehog-exclude"
+          # TruffleHog usa regex por linha; caminhos no CI costumam ser absolutos (/workspace/.git/...),
+          # então ^\.git/ não exclui — inclua /\.git/ para ignorar metadados do Git (falsos positivos).
+          printf '%s\n' \
+            'node_modules' \
+            'dist' \
+            '/\.git/' \
+            '\.git/' \
+            '\.trufflehog-exclude' \
+            > "${GITHUB_WORKSPACE}/.trufflehog-exclude"
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" \
             trufflesecurity/trufflehog:3.93.8 \
             filesystem /workspace --fail --exclude-paths=/workspace/.trufflehog-exclude
