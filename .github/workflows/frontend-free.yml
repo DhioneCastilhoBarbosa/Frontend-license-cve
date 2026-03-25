@@ -7,6 +7,16 @@ on:
 jobs:
   frontend:
     runs-on: ubuntu-latest
+    outputs:
+      install: ${{ steps.collect.outputs.install }}
+      lint: ${{ steps.collect.outputs.lint }}
+      test: ${{ steps.collect.outputs.test }}
+      build: ${{ steps.collect.outputs.build }}
+      sca: ${{ steps.collect.outputs.sca }}
+      codeql_init: ${{ steps.collect.outputs.codeql_init }}
+      codeql_autobuild: ${{ steps.collect.outputs.codeql_autobuild }}
+      codeql_analyze: ${{ steps.collect.outputs.codeql_analyze }}
+      trufflehog: ${{ steps.collect.outputs.trufflehog }}
     permissions:
       contents: read
       actions: write # upload-artifact precisa de escrita
@@ -52,19 +62,27 @@ jobs:
           path: dist/
           retention-days: 14
 
-      # SCA (dependências)
-      - name: NPM Audit (report HIGH)
+      # SCA (dependências) — não quebra o job; resultado vai para o relatório
+      - name: NPM Audit (SCA — HIGH)
         id: audit
-        run: npm audit --audit-level=high || true
+        run: |
+          if npm audit --audit-level=high; then
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          fi
+          exit 0
 
       # SAST (CodeQL)
       - name: Init CodeQL
+        id: codeql-init
         uses: github/codeql-action/init@v3
         with:
           languages: javascript
           github-token: ${{ github.token }}
 
       - name: Autobuild
+        id: codeql-autobuild
         uses: github/codeql-action/autobuild@v3
 
       - name: Analyze CodeQL
@@ -91,6 +109,35 @@ jobs:
             trufflesecurity/trufflehog:3.93.8 \
             filesystem /workspace --fail --exclude-paths=/workspace/.trufflehog-exclude
 
+      - name: Coletar resultados (para relatório)
+        id: collect
+        if: always()
+        run: |
+          label() {
+            case "$1" in
+              success) echo "Passou" ;;
+              failure) echo "Falhou" ;;
+              skipped) echo "Ignorado" ;;
+              cancelled) echo "Cancelado" ;;
+              *) echo "$1" ;;
+            esac
+          }
+          echo "install=$(label '${{ steps.install.outcome }}')" >> "$GITHUB_OUTPUT"
+          echo "lint=$(label '${{ steps.lint.outcome }}')" >> "$GITHUB_OUTPUT"
+          echo "test=$(label '${{ steps.test.outcome }}')" >> "$GITHUB_OUTPUT"
+          echo "build=$(label '${{ steps.build.outcome }}')" >> "$GITHUB_OUTPUT"
+          if [ "${{ steps.audit.outcome }}" = "skipped" ]; then
+            echo "sca=Ignorado" >> "$GITHUB_OUTPUT"
+          elif [ "${{ steps.audit.outputs.result }}" = "pass" ]; then
+            echo "sca=Passou (sem HIGH+ no npm audit)" >> "$GITHUB_OUTPUT"
+          else
+            echo "sca=Falhou / vulnerabilidades HIGH+ (ver log do NPM Audit)" >> "$GITHUB_OUTPUT"
+          fi
+          echo "codeql_init=$(label '${{ steps.codeql-init.outcome }}')" >> "$GITHUB_OUTPUT"
+          echo "codeql_autobuild=$(label '${{ steps.codeql-autobuild.outcome }}')" >> "$GITHUB_OUTPUT"
+          echo "codeql_analyze=$(label '${{ steps.codeql.outcome }}')" >> "$GITHUB_OUTPUT"
+          echo "trufflehog=$(label '${{ steps.trufflehog.outcome }}')" >> "$GITHUB_OUTPUT"
+
   # Sempre executa ao fim (mesmo se o job frontend falhar) — relatório na aba Summary do run
   ci-report:
     name: Relatório do workflow
@@ -113,12 +160,31 @@ jobs:
             echo "| SHA | \`${{ github.sha }}\` |"
             echo "| Ator | @${{ github.actor }} |"
             echo "| Run | [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |"
-            echo "| **Job \`frontend\`** | **${{ needs.frontend.result }}** |"
+            echo "| **Job \`frontend\` (geral)** | **${{ needs.frontend.result }}** |"
+            echo ""
+            echo "### Qualidade e build"
+            echo ""
+            echo "| Etapa | Resultado |"
+            echo "|-------|-----------|"
+            echo "| Instalação (\`npm ci\`) | ${{ needs.frontend.outputs.install }} |"
+            echo "| Lint | ${{ needs.frontend.outputs.lint }} |"
+            echo "| Testes | ${{ needs.frontend.outputs.test }} |"
+            echo "| Build | ${{ needs.frontend.outputs.build }} |"
+            echo ""
+            echo "### Segurança"
+            echo ""
+            echo "| Etapa | Resultado |"
+            echo "|-------|-----------|"
+            echo "| **SCA** — \`npm audit\` (nível HIGH) | ${{ needs.frontend.outputs.sca }} |"
+            echo "| **SAST** — CodeQL init | ${{ needs.frontend.outputs.codeql_init }} |"
+            echo "| **SAST** — CodeQL autobuild | ${{ needs.frontend.outputs.codeql_autobuild }} |"
+            echo "| **SAST** — CodeQL analyze / upload | ${{ needs.frontend.outputs.codeql_analyze }} |"
+            echo "| **Secrets** — TruffleHog | ${{ needs.frontend.outputs.trufflehog }} |"
             echo ""
             echo "### Onde ver mais detalhes"
-            echo "- **Logs por step:** abra o job **frontend** nesta execução."
-            echo "- **CodeQL:** aba **Security** do repositório → *Code scanning alerts* (quando houver upload)."
-            echo "- **Build:** se o step *Build* passou, o artefato \`dist-${{ github.run_number }}\` fica em **Artifacts** no job **frontend**."
+            echo "- **Logs por step:** job **frontend**."
+            echo "- **CodeQL (alertas):** **Security** → *Code scanning alerts*."
+            echo "- **Build:** artefato \`dist-${{ github.run_number }}\` no job **frontend** (se o build passou)."
             echo ""
             echo "_Gerado automaticamente ao fim do workflow._"
           } >> "$GITHUB_STEP_SUMMARY"
