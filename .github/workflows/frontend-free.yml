@@ -59,10 +59,11 @@ jobs:
         with:
           github-token: ${{ github.token }}
 
-      # Secrets scanning
+      # Secrets scanning (só o repositório do app — não clonar TruffleHog dentro do workspace)
       - name: TruffleHog Scan
         run: |
-          git clone https://github.com/trufflesecurity/trufflehog.git
-          cd trufflehog
-          go build
-          ./trufflehog filesystem ../ --fail
+          set -euo pipefail
+          printf '%s\n' 'node_modules' 'dist' '^\.git/' > "${GITHUB_WORKSPACE}/.trufflehog-exclude"
+          docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" \
+            trufflesecurity/trufflehog:3.93.8 \
+            filesystem /workspace --fail --exclude-paths=/workspace/.trufflehog-exclude
