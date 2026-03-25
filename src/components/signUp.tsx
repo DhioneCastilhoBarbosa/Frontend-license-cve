@@ -34,11 +34,15 @@ export default function SignUp() {
       );
       navigate("/login");
       form.reset();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const errorData = (err as { response?: { data?: { message?: string; error?: string } } })
+        ?.response?.data;
+
       const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
+        errorData?.message ??
+        errorData?.error ??
         "Falha ao cadastrar. Verifique os dados e tente novamente.";
+
       toast.error(msg, { closeButton: true });
     }
   };
