@@ -9,7 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      actions: read
+      actions: write # upload-artifact precisa de escrita
       pull-requests: read
       security-events: write
 
@@ -26,22 +26,35 @@ jobs:
           cache-dependency-path: package-lock.json
 
       - name: Install
+        id: install
         run: npm ci
 
       # LINT
       - name: Lint
+        id: lint
         run: npm run lint
 
       # TESTES
       - name: Test
+        id: test
         run: npm run test
 
       # BUILD
       - name: Build
+        id: build
         run: npm run build
+
+      - name: Upload artefato (dist)
+        if: success() && steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.run_number }}
+          path: dist/
+          retention-days: 14
 
       # SCA (dependências)
       - name: NPM Audit (report HIGH)
+        id: audit
         run: npm audit --audit-level=high || true
 
       # SAST (CodeQL)
@@ -55,12 +68,14 @@ jobs:
         uses: github/codeql-action/autobuild@v3
 
       - name: Analyze CodeQL
+        id: codeql
         uses: github/codeql-action/analyze@v3
         with:
           github-token: ${{ github.token }}
 
       # Secrets scanning (só o repositório do app — não clonar TruffleHog dentro do workspace)
       - name: TruffleHog Scan
+        id: trufflehog
         run: |
           set -euo pipefail
           # TruffleHog usa regex por linha; caminhos no CI costumam ser absolutos (/workspace/.git/...),
@@ -75,3 +90,35 @@ jobs:
           docker run --rm -v "${GITHUB_WORKSPACE}:/workspace" \
             trufflesecurity/trufflehog:3.93.8 \
             filesystem /workspace --fail --exclude-paths=/workspace/.trufflehog-exclude
+
+  # Sempre executa ao fim (mesmo se o job frontend falhar) — relatório na aba Summary do run
+  ci-report:
+    name: Relatório do workflow
+    runs-on: ubuntu-latest
+    needs: frontend
+    if: always()
+    permissions:
+      contents: read
+    steps:
+      - name: Resumo (GitHub Step Summary)
+        run: |
+          {
+            echo "## Relatório — Frontend Free CI"
+            echo ""
+            echo "| Campo | Valor |"
+            echo "|-------|-------|"
+            echo "| Workflow | \`${{ github.workflow }}\` |"
+            echo "| Evento | \`${{ github.event_name }}\` |"
+            echo "| Branch/ref | \`${{ github.ref_name }}\` (\`${{ github.ref }}\`) |"
+            echo "| SHA | \`${{ github.sha }}\` |"
+            echo "| Ator | @${{ github.actor }} |"
+            echo "| Run | [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}) |"
+            echo "| **Job \`frontend\`** | **${{ needs.frontend.result }}** |"
+            echo ""
+            echo "### Onde ver mais detalhes"
+            echo "- **Logs por step:** abra o job **frontend** nesta execução."
+            echo "- **CodeQL:** aba **Security** do repositório → *Code scanning alerts* (quando houver upload)."
+            echo "- **Build:** se o step *Build* passou, o artefato \`dist-${{ github.run_number }}\` fica em **Artifacts** no job **frontend**."
+            echo ""
+            echo "_Gerado automaticamente ao fim do workflow._"
+          } >> "$GITHUB_STEP_SUMMARY"
