@@ -7,6 +7,11 @@ on:
 jobs:
   frontend:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: read
+      security-events: write
 
     steps:
       - name: Checkout
@@ -44,12 +49,15 @@ jobs:
         uses: github/codeql-action/init@v3
         with:
           languages: javascript
+          github-token: ${{ github.token }}
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
 
       - name: Analyze CodeQL
         uses: github/codeql-action/analyze@v3
+        with:
+          github-token: ${{ github.token }}
 
       # Secrets scanning
       - name: TruffleHog Scan
