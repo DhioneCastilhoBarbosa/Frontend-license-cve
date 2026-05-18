@@ -12,6 +12,7 @@ import { Toaster} from 'sonner'
 import './global.css'
 import Key from './components/keys/key'
 import RequestKey from './components/requestKey'
+import TermosDeUso from './components/termosDeUso'
 import PrivateRoute from './routes/PrivateRoute'
 
 
@@ -82,6 +83,7 @@ export default function App() {
 
             {/* Públicas */}
             <Route path="/solicitar-chave" element={<RequestKey />} />
+            <Route path="/termos-de-uso" element={<TermosDeUso />} />
             <Route path="/login" element={<SignIn onLogin={handleLogin} />} />
             <Route path="/cadastro" element={<SignUp />} />
 

@@ -1,5 +1,4 @@
 import { KeySquareIcon, Loader, Lock, Mail, User } from "lucide-react"
-
 import api from "../services/api";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -115,7 +114,7 @@ export default function RequestKey(){
           </div>
         </label>
         <span className="text-center mt-4 text-sm text-gray-500 dark:text-gray-400">
-          Ao solicitar a chave, você concorda com os <a href="https://www.intelbras.com/pt-br/politica-de-privacidade/termos" target="_blank" rel="noopener noreferrer" className="text-sky-500 hover:underline">Termos de Uso</a> e a <a href="https://www.intelbras.com/pt-br/politica-de-privacidade/politica" target="_blank" rel="noopener noreferrer" className="text-sky-500 hover:underline">Política de Privacidade</a>.
+          Ao solicitar a chave, você concorda com os <a href="/termos-de-uso" target="_blank" rel="noopener noreferrer" className="text-sky-500 hover:underline">Termos de Uso</a> e a <a href="https://www.intelbras.com/pt-br/politica-de-privacidade/politica" target="_blank" rel="noopener noreferrer" className="text-sky-500 hover:underline">Política de Privacidade</a>.
         </span>
 
         <button 
