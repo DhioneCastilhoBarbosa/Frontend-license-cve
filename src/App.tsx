@@ -2,12 +2,15 @@ import { useEffect, useState } from 'react'
 import { Routes, Route, Navigate} from 'react-router-dom'
 import { useNavigate } from "react-router-dom";
 
-import Header from './components/header'
 import SignIn from './components/singin'
-import SignUp from './components/signUp' // supondo que existe
+import SignUp from './components/signUp'
 import Dashboard from './components/dashboard/dashboard'
+import AppLayout from './components/layout/AppLayout'
+import type { AppPage } from './components/layout/Sidebar'
+import UsersPage from './components/users/Users'
 
 import { Toaster} from 'sonner'
+import { useTheme } from './hooks/useTheme'
 
 import './global.css'
 import Key from './components/keys/key'
@@ -20,9 +23,9 @@ export default function App() {
    const navigate = useNavigate()
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
-  const [isPage, setIspage] = useState('dashboard')
-
-
+  const [activePage, setActivePage] = useState<AppPage>('dashboard')
+  const [userEmail, setUserEmail] = useState('')
+  const { isDark, toggleTheme } = useTheme()
 
   useEffect(() => {
     const authenticated = localStorage.getItem('authenticated')
@@ -32,20 +35,22 @@ export default function App() {
 
     if (authenticated === 'true' && expiration > now) {
       setIsAuthenticated(true)
+      setUserEmail(localStorage.getItem('user_email') ?? '')
     } else {
       localStorage.removeItem('authenticated')
       localStorage.removeItem('expires_at')
-      localStorage.removeItem('token') // importante também
+      localStorage.removeItem('token')
+      localStorage.removeItem('user_email')
     }
 
-    // ✅ Finaliza o carregamento depois da verificação
     setIsLoading(false)
   }, [])
 
   const handleLogin = () => {
-    const expiresAt = Date.now() + 60 * 60 * 1000 // 60 minutos
+    const expiresAt = Date.now() + 60 * 60 * 1000
     localStorage.setItem('authenticated', 'true')
     localStorage.setItem('expires_at', expiresAt.toString())
+    setUserEmail(localStorage.getItem('user_email') ?? '')
     setIsAuthenticated(true)
   }
 
@@ -53,16 +58,21 @@ export default function App() {
     localStorage.removeItem('authenticated')
     localStorage.removeItem('expires_at')
     localStorage.removeItem('token')
-    setIspage("dashboard")
+    localStorage.removeItem('user_email')
+    setActivePage('dashboard')
     setIsAuthenticated(false)
-    navigate("/login", { replace: true }); // força ir para login
+    navigate("/login", { replace: true });
   }
 
-  const handleLicenca = ()=>{
-   setIspage("dashboard")
-  }
-  const handleChave = ()=>{
-   setIspage("key")
+  const renderPage = () => {
+    switch (activePage) {
+      case 'key':
+        return <Key />
+      case 'users':
+        return <UsersPage />
+      default:
+        return <Dashboard />
+    }
   }
 
   if (isLoading) {
@@ -75,36 +85,33 @@ export default function App() {
 
   return (
     <>
-     
         <div className="h-screen flex flex-col bg-white text-black dark:bg-zinc-900 dark:text-white overflow-hidden">
           <Routes>
-            {/* Primeira rota de acesso → /solicitar-chave */}
             <Route path="/" element={<Navigate to="/solicitar-chave" replace />} />
 
-            {/* Públicas */}
             <Route path="/solicitar-chave" element={<RequestKey />} />
             <Route path="/termos-de-uso" element={<TermosDeUso />} />
             <Route path="/login" element={<SignIn onLogin={handleLogin} />} />
             <Route path="/cadastro" element={<SignUp />} />
 
-            {/* Protegida */}
             <Route
               path="/dashboard"
               element={
                 <PrivateRoute isAuthenticated={isAuthenticated}>
-                  <>
-                    <header className="w-full">
-                      <Header LogOut={handleLogout} LogKey={handleChave} LogLicense={handleLicenca}/>
-                    </header>
-                    <main className="flex-1 h-screen overflow-auto">
-                      {isPage === "dashboard" ? <Dashboard /> : <Key />}
-                    </main>
-                  </>
+                  <AppLayout
+                    activePage={activePage}
+                    isDark={isDark}
+                    userEmail={userEmail}
+                    onNavigate={setActivePage}
+                    onToggleTheme={toggleTheme}
+                    onLogout={handleLogout}
+                  >
+                    {renderPage()}
+                  </AppLayout>
                 </PrivateRoute>
               }
             />
 
-            {/* Qualquer outra rota → /solicitar-chave */}
             <Route path="*" element={<Navigate to="/solicitar-chave" replace />} />
           </Routes>
 

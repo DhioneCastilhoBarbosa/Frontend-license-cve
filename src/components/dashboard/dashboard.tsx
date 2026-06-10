@@ -1,26 +1,41 @@
-import { useRef } from "react";
-import Cards,{type CardsHandle} from "./components/cards";
-import Table from "./components/table";
+import { useCallback, useEffect, useRef, useState } from "react";
+import api from "../../services/api";
+import type { LicenseRecord } from "../../types/licenseReport";
+import LicenseCharts from "./components/LicenseCharts";
+import LicenseMetrics from "./components/LicenseMetrics";
+import LicensePageHeader from "./components/LicensePageHeader";
+import Table, { type TableHandle } from "./components/table";
 
 export default function Dashboard() {
-   const cardsRef = useRef<CardsHandle>(null)
+  const tableRef = useRef<TableHandle>(null);
+  const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
 
-  const handleRefreshFromTable = () => {
-    cardsRef.current?.refresh()
-  }
+  const fetchLicenses = useCallback(async () => {
+    try {
+      const response = await api.get("/licencas");
+      setLicenses(response.data);
+    } catch (error) {
+      console.error("Erro ao buscar licenças:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchLicenses();
+  }, [fetchLicenses]);
 
   return (
-    <div className="h-full flex flex-col md:overflow-hidden overflow-auto items-stretch w-full">
-      {/* Cards fixos no topo */}
-      <div className="p-8 shrink-0 w-full flex justify-center">
-        <Cards ref={cardsRef} />
-      </div>
-
-      {/* Área da tabela com rolagem — largura total para reduzir rolagem horizontal */}
-      <div className="flex-1 md:overflow-y-auto w-full min-w-0 px-4 sm:px-6 lg:px-8 pt-0 pb-6">
-        <Table onRefresh={handleRefreshFromTable} />
-      </div>
+    <div className="flex flex-col gap-6 p-4 pt-14 lg:p-8 lg:pt-8 max-w-[1600px] mx-auto w-full">
+      <LicensePageHeader
+        onExportReport={() => tableRef.current?.openReport()}
+        onNewLicense={() => tableRef.current?.openCreateModal()}
+      />
+      <LicenseMetrics licenses={licenses} />
+      <LicenseCharts licenses={licenses} />
+      <Table
+        ref={tableRef}
+        licenses={licenses}
+        onRefresh={fetchLicenses}
+      />
     </div>
-  )
+  );
 }
-

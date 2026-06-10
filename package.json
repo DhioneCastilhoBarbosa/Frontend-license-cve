@@ -15,10 +15,13 @@
     "@headlessui/react": "^2.2.5",
     "@tailwindcss/vite": "^4.1.11",
     "axios": "^1.13.6",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "lucide-react": "^0.525.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.13.2",
+    "recharts": "^3.8.1",
     "sonner": "^2.0.6",
     "tailwindcss": "^4.1.11"
   },

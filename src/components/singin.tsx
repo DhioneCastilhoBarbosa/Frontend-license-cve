@@ -29,8 +29,8 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     console.log('Token recebido:', token);
 
     localStorage.setItem('token', token);
+    localStorage.setItem('user_email', email);
 
-    // ⬇️ Adicione essas duas linhas para o App reconhecer o login
     localStorage.setItem('authenticated', 'true');
     const expiresAt = Date.now() + 60 * 60 * 1000; // 60 minutos
     localStorage.setItem('expires_at', expiresAt.toString());
