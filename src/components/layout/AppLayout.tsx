@@ -6,6 +6,8 @@ interface AppLayoutProps {
   activePage: AppPage;
   isDark: boolean;
   userEmail: string;
+  userNome: string;
+  nivelAcesso: string;
   onNavigate: (page: AppPage) => void;
   onToggleTheme: () => void;
   onLogout: () => void;
@@ -16,6 +18,8 @@ export default function AppLayout({
   activePage,
   isDark,
   userEmail,
+  userNome,
+  nivelAcesso,
   onNavigate,
   onToggleTheme,
   onLogout,
@@ -26,6 +30,8 @@ export default function AppLayout({
         activePage={activePage}
         isDark={isDark}
         userEmail={userEmail}
+        userNome={userNome}
+        nivelAcesso={nivelAcesso}
         onNavigate={onNavigate}
         onToggleTheme={onToggleTheme}
         onLogout={onLogout}

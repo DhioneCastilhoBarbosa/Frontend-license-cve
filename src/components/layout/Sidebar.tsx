@@ -5,9 +5,11 @@ import {
   Menu,
   Moon,
   SunIcon,
+  Users,
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { canAccessUsers, getNivelAcessoLabel } from "../../utils/permissions";
 
 export type AppPage = "dashboard" | "key" | "users";
 
@@ -15,25 +17,35 @@ interface SidebarProps {
   activePage: AppPage;
   isDark: boolean;
   userEmail: string;
+  userNome: string;
+  nivelAcesso: string;
   onNavigate: (page: AppPage) => void;
   onToggleTheme: () => void;
   onLogout: () => void;
 }
 
-const navItems: { id: AppPage; label: string; icon: typeof KeyRound }[] = [
+const baseNavItems: { id: AppPage; label: string; icon: typeof KeyRound }[] = [
   { id: "dashboard", label: "Licenças", icon: KeyRound },
   { id: "key", label: "Chaves", icon: KeySquareIcon },
 ];
 
+const usersNavItem = { id: "users" as const, label: "Usuários", icon: Users };
+
 function NavContent({
   activePage,
+  nivelAcesso,
   onNavigate,
   onCloseMobile,
 }: {
   activePage: AppPage;
+  nivelAcesso: string;
   onNavigate: (page: AppPage) => void;
   onCloseMobile?: () => void;
 }) {
+  const navItems = canAccessUsers(nivelAcesso)
+    ? [...baseNavItems, usersNavItem]
+    : baseNavItems;
+
   return (
     <nav className="flex flex-col gap-1 px-3">
       {navItems.map(({ id, label, icon: Icon }) => {
@@ -64,11 +76,15 @@ function NavContent({
 function SidebarFooter({
   isDark,
   userEmail,
+  userNome,
+  nivelAcesso,
   onToggleTheme,
   onLogout,
 }: {
   isDark: boolean;
   userEmail: string;
+  userNome: string;
+  nivelAcesso: string;
   onToggleTheme: () => void;
   onLogout: () => void;
 }) {
@@ -100,9 +116,21 @@ function SidebarFooter({
         </button>
       </div>
 
-      <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-        {userEmail || "usuario@email.com"}
-      </p>
+      <div className="space-y-1">
+        {userNome && (
+          <p className="truncate text-xs font-medium text-zinc-700 dark:text-zinc-300">
+            {userNome}
+          </p>
+        )}
+        <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+          {userEmail || "usuario@email.com"}
+        </p>
+        {nivelAcesso && (
+          <p className="truncate text-[11px] text-zinc-400 dark:text-zinc-500">
+            {getNivelAcessoLabel(nivelAcesso)}
+          </p>
+        )}
+      </div>
 
       <button
         type="button"
@@ -120,6 +148,8 @@ export default function Sidebar({
   activePage,
   isDark,
   userEmail,
+  userNome,
+  nivelAcesso,
   onNavigate,
   onToggleTheme,
   onLogout,
@@ -143,6 +173,7 @@ export default function Sidebar({
       <div className="flex-1 overflow-y-auto py-4">
         <NavContent
           activePage={activePage}
+          nivelAcesso={nivelAcesso}
           onNavigate={onNavigate}
           onCloseMobile={() => setMobileOpen(false)}
         />
@@ -151,6 +182,8 @@ export default function Sidebar({
       <SidebarFooter
         isDark={isDark}
         userEmail={userEmail}
+        userNome={userNome}
+        nivelAcesso={nivelAcesso}
         onToggleTheme={onToggleTheme}
         onLogout={onLogout}
       />

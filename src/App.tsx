@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react'
-import { Routes, Route, Navigate} from 'react-router-dom'
-import { useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 
 import SignIn from './components/singin'
 import SignUp from './components/signUp'
+import ForgotPassword from './components/auth/ForgotPassword'
+import ResetPassword from './components/auth/ResetPassword'
+import PasswordResetTokenRedirect from './components/auth/PasswordResetTokenRedirect'
 import Dashboard from './components/dashboard/dashboard'
 import AppLayout from './components/layout/AppLayout'
 import type { AppPage } from './components/layout/Sidebar'
@@ -17,6 +19,7 @@ import Key from './components/keys/key'
 import RequestKey from './components/requestKey'
 import TermosDeUso from './components/termosDeUso'
 import PrivateRoute from './routes/PrivateRoute'
+import { canAccessUsers } from './utils/permissions'
 
 
 export default function App() {
@@ -25,6 +28,8 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true)
   const [activePage, setActivePage] = useState<AppPage>('dashboard')
   const [userEmail, setUserEmail] = useState('')
+  const [userNome, setUserNome] = useState('')
+  const [nivelAcesso, setNivelAcesso] = useState('')
   const { isDark, toggleTheme } = useTheme()
 
   useEffect(() => {
@@ -36,11 +41,15 @@ export default function App() {
     if (authenticated === 'true' && expiration > now) {
       setIsAuthenticated(true)
       setUserEmail(localStorage.getItem('user_email') ?? '')
+      setUserNome(localStorage.getItem('user_nome') ?? '')
+      setNivelAcesso(localStorage.getItem('nivel_acesso') ?? '')
     } else {
       localStorage.removeItem('authenticated')
       localStorage.removeItem('expires_at')
       localStorage.removeItem('token')
       localStorage.removeItem('user_email')
+      localStorage.removeItem('user_nome')
+      localStorage.removeItem('nivel_acesso')
     }
 
     setIsLoading(false)
@@ -51,7 +60,16 @@ export default function App() {
     localStorage.setItem('authenticated', 'true')
     localStorage.setItem('expires_at', expiresAt.toString())
     setUserEmail(localStorage.getItem('user_email') ?? '')
+    setUserNome(localStorage.getItem('user_nome') ?? '')
+    setNivelAcesso(localStorage.getItem('nivel_acesso') ?? '')
     setIsAuthenticated(true)
+  }
+
+  const handleNavigate = (page: AppPage) => {
+    if (page === 'users' && !canAccessUsers(nivelAcesso)) {
+      return
+    }
+    setActivePage(page)
   }
 
   const handleLogout = () => {
@@ -59,19 +77,29 @@ export default function App() {
     localStorage.removeItem('expires_at')
     localStorage.removeItem('token')
     localStorage.removeItem('user_email')
+    localStorage.removeItem('user_nome')
+    localStorage.removeItem('nivel_acesso')
     setActivePage('dashboard')
     setIsAuthenticated(false)
+    setUserNome('')
+    setNivelAcesso('')
     navigate("/login", { replace: true });
   }
+
+  useEffect(() => {
+    if (activePage === 'users' && !canAccessUsers(nivelAcesso)) {
+      setActivePage('dashboard')
+    }
+  }, [activePage, nivelAcesso])
 
   const renderPage = () => {
     switch (activePage) {
       case 'key':
-        return <Key />
+        return <Key canWrite={nivelAcesso !== 'visualizador'} />
       case 'users':
-        return <UsersPage />
+        return canAccessUsers(nivelAcesso) ? <UsersPage /> : <Dashboard canWrite={nivelAcesso !== 'visualizador'} />
       default:
-        return <Dashboard />
+        return <Dashboard canWrite={nivelAcesso !== 'visualizador'} />
     }
   }
 
@@ -85,6 +113,7 @@ export default function App() {
 
   return (
     <>
+        <PasswordResetTokenRedirect />
         <div className="h-screen flex flex-col bg-white text-black dark:bg-zinc-900 dark:text-white overflow-hidden">
           <Routes>
             <Route path="/" element={<Navigate to="/solicitar-chave" replace />} />
@@ -93,6 +122,8 @@ export default function App() {
             <Route path="/termos-de-uso" element={<TermosDeUso />} />
             <Route path="/login" element={<SignIn onLogin={handleLogin} />} />
             <Route path="/cadastro" element={<SignUp />} />
+            <Route path="/auth/forgot-password" element={<ForgotPassword />} />
+            <Route path="/auth/reset-password" element={<ResetPassword />} />
 
             <Route
               path="/dashboard"
@@ -102,7 +133,9 @@ export default function App() {
                     activePage={activePage}
                     isDark={isDark}
                     userEmail={userEmail}
-                    onNavigate={setActivePage}
+                    userNome={userNome}
+                    nivelAcesso={nivelAcesso}
+                    onNavigate={handleNavigate}
                     onToggleTheme={toggleTheme}
                     onLogout={handleLogout}
                   >

@@ -1,10 +1,11 @@
 import { Plus } from "lucide-react";
 
 interface KeyPageHeaderProps {
+  canWrite: boolean;
   onNewKey: () => void;
 }
 
-export default function KeyPageHeader({ onNewKey }: KeyPageHeaderProps) {
+export default function KeyPageHeader({ canWrite, onNewKey }: KeyPageHeaderProps) {
   return (
     <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
       <div>
@@ -16,14 +17,16 @@ export default function KeyPageHeader({ onNewKey }: KeyPageHeaderProps) {
         </p>
       </div>
       <div className="flex items-center gap-3 shrink-0">
-        <button
-          type="button"
-          onClick={onNewKey}
-          className="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-600 transition cursor-pointer shadow-sm"
-        >
-          <Plus size={16} />
-          Nova Chave
-        </button>
+        {canWrite && (
+          <button
+            type="button"
+            onClick={onNewKey}
+            className="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-600 transition cursor-pointer shadow-sm"
+          >
+            <Plus size={16} />
+            Nova Chave
+          </button>
+        )}
       </div>
     </div>
   );

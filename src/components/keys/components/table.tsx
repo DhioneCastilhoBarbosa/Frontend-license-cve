@@ -20,11 +20,10 @@ import {
   EyeOff,
   Inbox,
   Pencil,
-  Search,
   Trash2,
-  X,
 } from "lucide-react";
 import { toast } from "sonner";
+import TableFilterBar, { FilterDate, FilterSelect } from "../../tableFilters/TableFilterBar";
 
 export interface TableHandle {
   openCreateModal: () => void;
@@ -32,15 +31,16 @@ export interface TableHandle {
 
 interface TableProps {
   keys: KeyRecord[];
+  canWrite?: boolean;
   onRefresh: () => void;
 }
 
 const STATUS_OPTIONS = ["Todos", "Ativada", "Criada", "Expirada"];
 const PERIOD_OPTIONS = [
-  { value: "all", label: "Todo o período" },
-  { value: "7d", label: "Últimos 7 dias" },
-  { value: "30d", label: "Últimos 30 dias" },
-  { value: "90d", label: "Últimos 90 dias" },
+  { value: "all", label: "Período" },
+  { value: "7d", label: "7 dias" },
+  { value: "30d", label: "30 dias" },
+  { value: "90d", label: "90 dias" },
 ];
 
 function StatusBadge({ status }: { status: string }) {
@@ -61,7 +61,7 @@ function StatusBadge({ status }: { status: string }) {
 }
 
 const Table = forwardRef<TableHandle, TableProps>(function Table(
-  { keys, onRefresh },
+  { keys, canWrite = true, onRefresh },
   ref
 ) {
   const [search, setSearch] = useState("");
@@ -178,7 +178,9 @@ const Table = forwardRef<TableHandle, TableProps>(function Table(
   };
 
   useImperativeHandle(ref, () => ({
-    openCreateModal: () => setIsModalOpen(true),
+    openCreateModal: () => {
+      if (canWrite) setIsModalOpen(true);
+    },
   }));
 
   const handleConfirmDelete = async () => {
@@ -226,103 +228,52 @@ const Table = forwardRef<TableHandle, TableProps>(function Table(
     setCurrentPage(1);
   }, [search, statusFilter, periodFilter, dateFrom, dateTo, itemsPerPage]);
 
-  const selectClass =
-    "rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-3 py-2.5 text-sm text-zinc-700 dark:text-zinc-300 focus:outline-none focus:ring-2 focus:ring-sky-500/30";
-
   return (
     <div className="space-y-4">
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-3">
-        <div className="flex flex-col xl:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search
-              size={16}
-              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400"
-            />
-            <input
-              type="text"
-              placeholder="Buscar por nome, e-mail, CPF ou chave..."
-              className="w-full rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-800/50 pl-9 pr-4 py-2.5 text-sm text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-sky-500/30"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className={selectClass}
-              aria-label="Status"
-            >
-              {STATUS_OPTIONS.map((s) => (
-                <option key={s} value={s}>
-                  {s === "Todos" ? "Status" : s}
-                </option>
-              ))}
-            </select>
-            <select
-              value={periodFilter}
-              onChange={(e) => setPeriodFilter(e.target.value)}
-              className={selectClass}
-              aria-label="Período"
-            >
-              {PERIOD_OPTIONS.map((p) => (
-                <option key={p.value} value={p.value}>
-                  {p.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+      <TableFilterBar
+        search={search}
+        onSearchChange={setSearch}
+        searchPlaceholder="Buscar nome, e-mail, CPF..."
+        activeChips={activeChips}
+        onClearAll={clearAllFilters}
+      >
+        <FilterSelect
+          value={statusFilter}
+          onChange={setStatusFilter}
+          aria-label="Status"
+          options={STATUS_OPTIONS.map((s) => ({
+            value: s,
+            label: s === "Todos" ? "Status" : s === "Ativada" ? "Ativa" : s,
+          }))}
+        />
+        <FilterSelect
+          value={periodFilter}
+          onChange={setPeriodFilter}
+          aria-label="Período"
+          options={PERIOD_OPTIONS}
+        />
+        <FilterDate
+          label="De"
+          value={dateFrom}
+          onChange={setDateFrom}
+          aria-label="Data inicial"
+        />
+        <FilterDate
+          label="Até"
+          value={dateTo}
+          onChange={setDateTo}
+          min={dateFrom || undefined}
+          aria-label="Data final"
+        />
+      </TableFilterBar>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className={`${selectClass} w-auto`}
-            aria-label="Data inicial"
-          />
-          <input
-            type="date"
-            value={dateTo}
-            min={dateFrom || undefined}
-            onChange={(e) => setDateTo(e.target.value)}
-            className={`${selectClass} w-auto`}
-            aria-label="Data final"
-          />
-          {activeChips.length > 0 && (
-            <button
-              type="button"
-              onClick={clearAllFilters}
-              className="text-xs font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 cursor-pointer ml-auto"
-            >
-              Limpar todos
-            </button>
-          )}
-        </div>
-
-        {activeChips.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-1">
-            {activeChips.map((chip) => (
-              <button
-                key={chip.key}
-                type="button"
-                onClick={chip.onRemove}
-                className="inline-flex items-center gap-1 rounded-full bg-sky-50 dark:bg-sky-950/40 px-2.5 py-1 text-xs font-medium text-sky-700 dark:text-sky-400 hover:bg-sky-100 dark:hover:bg-sky-950/60 cursor-pointer"
-              >
-                {chip.label}
-                <X size={12} />
-              </button>
-            ))}
-          </div>
-        )}
-      </div>
-
-      <CreateLicenseModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        onRefresh={onRefresh}
-      />
+      {canWrite && (
+        <CreateLicenseModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          onRefresh={onRefresh}
+        />
+      )}
       <DeleteKeyConfirmModal
         isOpen={deleteTarget !== null}
         onClose={() => !deleteLoading && setDeleteTarget(null)}
@@ -356,7 +307,7 @@ const Table = forwardRef<TableHandle, TableProps>(function Table(
                   "Chave de Acesso",
                   "Status",
                   "Data de Criação",
-                  "Ações",
+                  ...(canWrite ? ["Ações"] : []),
                 ].map((col) => (
                   <th
                     key={col}
@@ -425,44 +376,46 @@ const Table = forwardRef<TableHandle, TableProps>(function Table(
                   <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400 whitespace-nowrap">
                     {new Date(item.created_at).toLocaleDateString("pt-BR")}
                   </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setEditStatusTarget({
-                            chave: item.chave,
-                            nome: item.nome,
-                            status: item.status,
-                          })
-                        }
-                        disabled={actionsDisabled}
-                        className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
-                        title="Editar"
-                      >
-                        <Pencil size={15} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setDeleteTarget({
-                            chave: item.chave,
-                            nome: item.nome,
-                          })
-                        }
-                        disabled={actionsDisabled}
-                        className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50 cursor-pointer"
-                        title="Excluir"
-                      >
-                        <Trash2 size={15} />
-                      </button>
-                    </div>
-                  </td>
+                  {canWrite && (
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEditStatusTarget({
+                              chave: item.chave,
+                              nome: item.nome,
+                              status: item.status,
+                            })
+                          }
+                          disabled={actionsDisabled}
+                          className="p-2 rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 disabled:opacity-50 cursor-pointer"
+                          title="Editar"
+                        >
+                          <Pencil size={15} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setDeleteTarget({
+                              chave: item.chave,
+                              nome: item.nome,
+                            })
+                          }
+                          disabled={actionsDisabled}
+                          className="p-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 disabled:opacity-50 cursor-pointer"
+                          title="Excluir"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
                 </tr>
               ))}
               {filtered.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-4 py-16 text-center text-zinc-400">
+                  <td colSpan={canWrite ? 7 : 6} className="px-4 py-16 text-center text-zinc-400">
                     <Inbox className="w-12 h-12 mx-auto mb-2 opacity-50" />
                     Nenhum resultado encontrado
                   </td>

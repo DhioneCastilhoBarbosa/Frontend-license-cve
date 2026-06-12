@@ -1,8 +1,9 @@
-import { KeySquareIcon, Loader, Lock, Mail } from "lucide-react"
-import { useNavigate } from "react-router-dom";
+import { KeySquareIcon, Loader, Mail } from "lucide-react"
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import api from "../services/api";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import PasswordField from "./PasswordField";
 
 
 interface SignInProps {
@@ -15,6 +16,15 @@ export default function SignIn({onLogin}: SignInProps){
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
+  const location = useLocation()
+
+  useEffect(() => {
+    const state = location.state as { message?: string } | null
+    if (state?.message) {
+      toast.success(state.message, { closeButton: true })
+      navigate(location.pathname, { replace: true, state: {} })
+    }
+  }, [location.pathname, location.state, navigate])
   
 const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
   e.preventDefault();
@@ -25,11 +35,12 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
       senha: password,
     });
 
-    const { token } = resposta.data;
-    console.log('Token recebido:', token);
+    const { token, nome, nivel_acesso } = resposta.data;
 
     localStorage.setItem('token', token);
     localStorage.setItem('user_email', email);
+    localStorage.setItem('user_nome', nome ?? '');
+    localStorage.setItem('nivel_acesso', nivel_acesso ?? 'visualizador');
 
     localStorage.setItem('authenticated', 'true');
     const expiresAt = Date.now() + 60 * 60 * 1000; // 60 minutos
@@ -77,20 +88,20 @@ const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
           </div>
         </label>
 
-        <label className="flex items-center gap-2 border-2 border-sky-300 p-2 rounded-md w-full transition-colors focus-within:border-sky-500 focus-within:bg-sky-50 dark:focus-within:bg-zinc-800">
-          <Lock className="w-5 h-5 text-sky-500" />
-          <div className="flex flex-row items-center gap-2 w-full">
-            <span className="text-sm text-gray-600 dark:text-gray-300">Senha:</span>
-            <input
-              type="password"
-              name="password"
-              className="bg-transparent outline-none border-none text-black dark:text-white placeholder:text-gray-400 w-full"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Digite sua senha"
-            />
-          </div>
-        </label>
+        <PasswordField
+          name="password"
+          placeholder="Digite sua senha"
+          value={password}
+          onChange={setPassword}
+          autoComplete="current-password"
+        />
+
+        <Link
+          to="/auth/forgot-password"
+          className="self-end text-sm text-sky-500 underline hover:text-sky-600 transition-colors"
+        >
+          Esqueci minha senha
+        </Link>
 
         <button 
           disabled={loading}

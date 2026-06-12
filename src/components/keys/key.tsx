@@ -6,7 +6,11 @@ import KeyMetrics from "./components/KeyMetrics";
 import KeyPageHeader from "./components/KeyPageHeader";
 import Table, { type TableHandle } from "./components/table";
 
-export default function Key() {
+interface KeyProps {
+  canWrite?: boolean;
+}
+
+export default function Key({ canWrite = true }: KeyProps) {
   const tableRef = useRef<TableHandle>(null);
   const [keys, setKeys] = useState<KeyRecord[]>([]);
 
@@ -25,10 +29,10 @@ export default function Key() {
 
   return (
     <div className="flex flex-col gap-6 p-4 pt-14 lg:p-8 lg:pt-8 max-w-[1600px] mx-auto w-full">
-      <KeyPageHeader onNewKey={() => tableRef.current?.openCreateModal()} />
+      <KeyPageHeader canWrite={canWrite} onNewKey={() => tableRef.current?.openCreateModal()} />
       <KeyMetrics keys={keys} />
       <KeyCharts keys={keys} />
-      <Table ref={tableRef} keys={keys} onRefresh={fetchKeys} />
+      <Table ref={tableRef} keys={keys} canWrite={canWrite} onRefresh={fetchKeys} />
     </div>
   );
 }

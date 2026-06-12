@@ -6,7 +6,11 @@ import LicenseMetrics from "./components/LicenseMetrics";
 import LicensePageHeader from "./components/LicensePageHeader";
 import Table, { type TableHandle } from "./components/table";
 
-export default function Dashboard() {
+interface DashboardProps {
+  canWrite?: boolean;
+}
+
+export default function Dashboard({ canWrite = true }: DashboardProps) {
   const tableRef = useRef<TableHandle>(null);
   const [licenses, setLicenses] = useState<LicenseRecord[]>([]);
 
@@ -26,6 +30,7 @@ export default function Dashboard() {
   return (
     <div className="flex flex-col gap-6 p-4 pt-14 lg:p-8 lg:pt-8 max-w-[1600px] mx-auto w-full">
       <LicensePageHeader
+        canWrite={canWrite}
         onExportReport={() => tableRef.current?.openReport()}
         onNewLicense={() => tableRef.current?.openCreateModal()}
       />
@@ -34,6 +39,7 @@ export default function Dashboard() {
       <Table
         ref={tableRef}
         licenses={licenses}
+        canWrite={canWrite}
         onRefresh={fetchLicenses}
       />
     </div>

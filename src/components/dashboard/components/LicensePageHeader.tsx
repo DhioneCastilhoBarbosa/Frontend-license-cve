@@ -1,11 +1,13 @@
 import { FileText, Plus } from "lucide-react";
 
 interface LicensePageHeaderProps {
+  canWrite: boolean;
   onExportReport: () => void;
   onNewLicense: () => void;
 }
 
 export default function LicensePageHeader({
+  canWrite,
   onExportReport,
   onNewLicense,
 }: LicensePageHeaderProps) {
@@ -28,14 +30,16 @@ export default function LicensePageHeader({
           <FileText size={16} />
           Exportar Relatório
         </button>
-        <button
-          type="button"
-          onClick={onNewLicense}
-          className="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-600 transition cursor-pointer shadow-sm"
-        >
-          <Plus size={16} />
-          Nova Licença
-        </button>
+        {canWrite && (
+          <button
+            type="button"
+            onClick={onNewLicense}
+            className="inline-flex items-center gap-2 rounded-lg bg-sky-500 px-4 py-2.5 text-sm font-medium text-white hover:bg-sky-600 transition cursor-pointer shadow-sm"
+          >
+            <Plus size={16} />
+            Nova Licença
+          </button>
+        )}
       </div>
     </div>
   );
